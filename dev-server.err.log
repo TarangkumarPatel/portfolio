@@ -1,0 +1,338 @@
+Compaction failed: Failed to compact database
+
+Caused by:
+    0: Failed to merge database files for family 2
+    1: Unable to open static sorted file 00000721.sst
+    2: Failed to mmap SST file C:\Users\taran\Desktop\PortfolioNew\my-portfolio\.next\dev\cache/turbopack\ee6e79b1\00000721.sst (162966595 bytes)
+    3: The paging file is too small for this operation to complete. (os error 1455)
+
+
+#
+# Fatal process out of memory: Re-embedded builtins: set permissions
+#
+----- Native stack trace -----
+
+ 1: 00007FF7E781C28D 
+ 2: 00007FF7E8C69576 
+ 3: 00007FF7E850B1C6 
+ 4: 00007FF7E83722AE 
+ 5: 00007FF7E83A57BF 
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+ 6: 00007FF7E83A6272 
+ 7: 00007FF7E83A6C52 
+ 8: 00007FF7E7EA41B3 
+ 9: 00007FF7E85363A6 
+10: 00007FF7E79D0A3D 
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+11: 00007FF7E7732B84 
+12: 00007FF7E7731F19 
+13: 00007FF7E773BE00 
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+14: 00007FF7E8560556 
+15: 00007FF7E97A14F3 
+16: 00007FFBF549E957 BaseThreadInitThunk+23
+17: 00007FFBF6CC7C1C RtlUserThreadStart+44
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+#
+
+# Fatal error in , line 0
+
+#
+# Out of memory: HashMap::Initialize
+# Fatal process out of memory: Re-embedded builtins: set permissions
+#
+#
+#
+#
+----- Native stack trace -----
+#FailureMessage Object: 000000A0AD7FA890
+
+----- Native stack trace -----
+
+ 1: 00007FF7E781C28D node::MultiIsolatePlatform::DisposeIsolate+5341
+ 2: 00007FF7E8C69B0F V8_Fatal+287
+ 3: 00007FF7E8509286 EVP_MD_CTX_set_update_fn+766854
+ 4: 00007FF7E8508972 EVP_MD_CTX_set_update_fn+764530
+ 5: 00007FF7E85087A0 EVP_MD_CTX_set_update_fn+764064
+ 6: 00007FF7E7F90EDF EC_KEY_METHOD_set_verify+79647
+ 7: 00007FF7E7FB1B06 EC_KEY_METHOD_set_verify+213830
+ 8: 00007FF7E7FC81FB EC_KEY_METHOD_set_verify+305723
+ 9: 00007FF7E7FC73CE EC_KEY_METHOD_set_verify+302094
+10: 00007FF7E7FCDC32 EC_KEY_METHOD_set_verify+328818
+ 1: 00007FF7E781C28D 
+11: 00007FF7E7FCA653 EC_KEY_METHOD_set_verify+315027
+ 2: 00007FF7E8C69576 
+12: 00007FF7E7FC8248 EC_KEY_METHOD_set_verify+305800
+ 3: 00007FF7E850B1C6 
+13: 00007FF7E7FC73CE EC_KEY_METHOD_set_verify+302094
+ 4: 00007FF7E83722AE 
+14: 00007FF7E7FC7089 EC_KEY_METHOD_set_verify+301257
+ 5: 00007FF7E83A57BF 
+15: 00007FF7E7FD0639 EC_KEY_METHOD_set_verify+339577
+ 6: 00007FF7E83A6272 
+16: 00007FF7E7FCF506 EC_KEY_METHOD_set_verify+335174
+ 7: 00007FF7E83A6C52 
+17: 00007FF7E7FC6AF6 EC_KEY_METHOD_set_verify+299830
+ 8: 00007FF7E7EA41B3 
+18: 00007FF7E7FC81FB EC_KEY_METHOD_set_verify+305723
+ 9: 00007FF7E85363A6 
+19: 00007FF7E7FC73CE EC_KEY_METHOD_set_verify+302094
+10: 00007FF7E79D0A3D 
+20: 00007FF7E7FCCD94 EC_KEY_METHOD_set_verify+325076
+11: 00007FF7E7732B84 
+21: 00007FF7E7FCB21E EC_KEY_METHOD_set_verify+318046
+12: 00007FF7E7731F19 
+22: 00007FF7E7FC81FB EC_KEY_METHOD_set_verify+305723
+13: 00007FF7E773BE00 
+23: 00007FF7E7FC73CE EC_KEY_METHOD_set_verify+302094
+14: 00007FF7E8560556 
+24: 00007FF7E7FC17B2 EC_KEY_METHOD_set_verify+278514
+15: 00007FF7E97A14F3 
+25: 00007FF7E7FB7345 EC_KEY_METHOD_set_verify+236421
+16: 00007FFBF549E957 BaseThreadInitThunk+23
+26: 00007FF7E7FC80F0 EC_KEY_METHOD_set_verify+305456
+17: 00007FFBF6CC7C1C 
+27: 00007FF7E7FC7414 EC_KEY_METHOD_set_verify+302164
+28: 00007FF7E7FC7089 EC_KEY_METHOD_set_verify+301257
+29: 00007FF7E7FCF850 EC_KEY_METHOD_set_verify+336016
+30: 00007FF7E7FC6AF6 EC_KEY_METHOD_set_verify+299830
+31: 00007FF7E7FC81FB EC_KEY_METHOD_set_verify+305723
+32: 00007FF7E7FC73CE EC_KEY_METHOD_set_verify+302094
+33: 00007FF7E7FD92A2 EC_KEY_METHOD_set_verify+375522
+34: 00007FF7E7FB8D75 EC_KEY_METHOD_set_verify+243125
+35: 00007FF7E7FC197B EC_KEY_METHOD_set_verify+278971
+36: 00007FF7E7FC0E7A EC_KEY_METHOD_set_verify+276154
+37: 00007FF7E7FB4577 EC_KEY_METHOD_set_verify+224695
+38: 00007FF7E7FB3744 EC_KEY_METHOD_set_verify+221060
+39: 00007FF7E7FB2A32 EC_KEY_METHOD_set_verify+217714
+40: 00007FF7E7FB26DA EC_KEY_METHOD_set_verify+216858
+41: 00007FF7E7FADD09 EC_KEY_METHOD_set_verify+197961
+42: 00007FF7E8488BDF EVP_MD_CTX_set_update_fn+240863
+43: 00007FF7E848B9E1 EVP_MD_CTX_set_update_fn+252641
+44: 00007FF7E85146A3 v8::ScriptCompiler::CompileFunction+1011
+45: 00007FF7E78E3823 node::GetCurrentEnvironment+20627
+46: 00007FF7E78E1FBD node::GetCurrentEnvironment+14381
+47: 00000265FA80F64D 
+
+
+#
+
+
+# Fatal process out of memory: Re-embedded builtins: set permissions
+
+
+#
+#
+# Fatal process out of memory: Re-embedded builtins: set permissions
+# Fatal error in , line 0
+#
+----- Native stack trace -----
+#
+# Out of memory: HashMap::Initialize
+
+
+----- Native stack trace -----
+#
+<--- Last few GCs --->
+
+ 1: 00007FF7E781C28D 
+#
+
+ 1: 00007FF7E781C28D 
+ 2: 00007FF7E8C69576 
+#
+ 2: 00007FF7E8C69576 
+ 3: 00007FF7E850B1C6 
+
+#FailureMessage Object: 000000C2283FC1C0
+ 3: 00007FF7E850B1C6 
+ 4: 00007FF7E83722AE 
+
+----- Native stack trace -----
+ 5: 00007FF7E83A57BF 
+ 4: 00007FF7E83722AE 
+#
+
+ 5: 00007FF7E83A57BF 
+ 6: 00007FF7E83A6272 
+# Fatal JavaScript out of memory: MemoryChunk allocation failed during deserialization.
+ 1: 00007FF7E781C28D node::MultiIsolatePlatform::DisposeIsolate+5341
+ 6: 00007FF7E83A6272 
+ 7: 00007FF7E83A6C52 
+#
+ 2: 00007FF7E8C69B0F V8_Fatal+287
+ 7: 00007FF7E83A6C52 
+ 8: 00007FF7E7EA41B3 
+----- Native stack trace -----
+ 3: 00007FF7E8509286 EVP_MD_CTX_set_update_fn+766854
+ 8: 00007FF7E7EA41B3 
+ 4: 00007FF7E8508972 EVP_MD_CTX_set_update_fn+764530
+
+ 9: 00007FF7E85363A6 
+ 9: 00007FF7E85363A6 
+10: 00007FF7E79D0A3D 
+ 1: 00007FF7E781C28D 
+ 5: 00007FF7E85087A0 EVP_MD_CTX_set_update_fn+764064
+10: 00007FF7E79D0A3D 
+11: 00007FF7E7732B84 
+ 2: 00007FF7E8C69576 
+ 6: 00007FF7E7F90EDF EC_KEY_METHOD_set_verify+79647
+11: 00007FF7E7732B84 
+12: 00007FF7E7731F19 
+ 3: 00007FF7E850B1C6 
+ 7: 00007FF7E7FCADCD EC_KEY_METHOD_set_verify+316941
+12: 00007FF7E7731F19 
+13: 00007FF7E773BE00 
+ 4: 00007FF7E830BA97 
+ 8: 00007FF7E7FC81FB EC_KEY_METHOD_set_verify+305723
+13: 00007FF7E773BE00 
+14: 00007FF7E8560556 
+ 5: 00007FF7E82BDCEA 
+ 9: 00007FF7E7FC73CE EC_KEY_METHOD_set_verify+302094
+14: 00007FF7E8560556 
+15: 00007FF7E97A14F3 
+ 6: 00007FF7E82BDDAC 
+10: 00007FF7E7FCCD94 EC_KEY_METHOD_set_verify+325076
+15: 00007FF7E97A14F3 
+16: 00007FFBF549E957 BaseThreadInitThunk+23
+ 7: 00007FF7E82BE69B 
+11: 00007FF7E7FCB21E EC_KEY_METHOD_set_verify+318046
+16: 00007FFBF549E957 BaseThreadInitThunk+23
+17: 00007FFBF6CC7C1C RtlUserThreadStart+44
+ 8: 00007FF7E82958F1 
+12: 00007FF7E7FC81FB EC_KEY_METHOD_set_verify+305723
+17: 00007FFBF6CC7C1C RtlUserThreadStart+44
+ 9: 00007FF7E82FB7A3 
+13: 00007FF7E7FC73CE EC_KEY_METHOD_set_verify+302094
+10: 00007FF7E82FB50E 
+14: 00007FF7E7FCDC32 EC_KEY_METHOD_set_verify+328818
+11: 00007FF7E82FA2F8 
+15: 00007FF7E7FCA653 EC_KEY_METHOD_set_verify+315027
+12: 00007FF7E82FA27A 
+16: 00007FF7E7FC8248 EC_KEY_METHOD_set_verify+305800
+13: 00007FF7E7EC1813 
+17: 00007FF7E7FC73CE EC_KEY_METHOD_set_verify+302094
+14: 00007FF7E7EBF65C 
+18: 00007FF7E7FCCD94 EC_KEY_METHOD_set_verify+325076
+15: 00007FF7E7EC5306 
+19: 00007FF7E7FD81AF EC_KEY_METHOD_set_verify+371183
+16: 00007FF7E7EC0348 
+20: 00007FF7E7FC197B EC_KEY_METHOD_set_verify+278971
+17: 00007FF7E7EBF83E 
+21: 00007FF7E7FC0E7A EC_KEY_METHOD_set_verify+276154
+18: 00007FF7E7EC5306 
+22: 00007FF7E7FB4577 EC_KEY_METHOD_set_verify+224695
+19: 00007FF7E7EC0348 
+23: 00007FF7E7FB3744 EC_KEY_METHOD_set_verify+221060
+20: 00007FF7E7EBF83E 
+24: 00007FF7E7FB2A32 EC_KEY_METHOD_set_verify+217714
+21: 00007FF7E7EC5306 
+25: 00007FF7E7FB26DA EC_KEY_METHOD_set_verify+216858
+22: 00007FF7E7EC0348 
+26: 00007FF7E7FADD09 EC_KEY_METHOD_set_verify+197961
+23: 00007FF7E7EBF83E 
+27: 00007FF7E8488BDF EVP_MD_CTX_set_update_fn+240863
+24: 00007FF7E7EC68DE 
+28: 00007FF7E848B9E1 EVP_MD_CTX_set_update_fn+252641
+25: 00007FF7E7EC008D 
+29: 00007FF7E85146A3 v8::ScriptCompiler::CompileFunction+1011
+26: 00007FF7E8313A58 
+30: 00007FF7E78F6460 node::GetCurrentEnvironment+97488
+27: 00007FF7E7E9E573 
+31: 00007FF7E78F7012 node::GetCurrentEnvironment+100482
+28: 00007FF7E83A685C 
+32: 00007FF7E78F9096 node::GetCurrentEnvironment+108806
+29: 00007FF7E83A6C52 
+33: 000002927D10F64D 
+30: 00007FF7E7EA41B3 
+31: 00007FF7E85363A6 
+32: 00007FF7E79D0A3D 
+33: 00007FF7E7732B84 
+34: 00007FF7E7731F19 
+35: 00007FF7E773BE00 
+36: 00007FF7E8560556 
+37: 00007FF7E97A14F3 
+38: 00007FFBF549E957 BaseThreadInitThunk+23
+39: 00007FFBF6CC7C1C RtlUserThreadStart+44
+
+
+#
+# Fatal process out of memory: Re-embedded builtins: set permissions
+#
+----- Native stack trace -----
+
+ 1: 00007FF7E781C28D node::MultiIsolatePlatform::DisposeIsolate+5341
+ 2: 00007FF7E8C69576 v8::base::FatalOOM+54
+ 3: 00007FF7E850B1C6 v8::Function::NewInstance+390
+ 4: 00007FF7E83722AE v8::CppHeap::CollectGarbageInYoungGenerationForTesting+111438
+ 5: 00007FF7E83A57BF SSL_CTX_set_default_read_buffer_len+41247
+ 6: 00007FF7E83A6272 SSL_CTX_set_default_read_buffer_len+43986
+ 7: 00007FF7E83A6C52 SSL_CTX_set_default_read_buffer_len+46514
+ 8: 00007FF7E7EA41B3 v8::internal::Version::GetSONAME+122307
+ 9: 00007FF7E85363A6 v8::Isolate::Initialize+662
+10: 00007FF7E79D0A3D node::SetIsolateUpForNode+669
+11: 00007FF7E7732B84 RSA_meth_get_flags+212292
+12: 00007FF7E7731F19 RSA_meth_get_flags+209113
+13: 00007FF7E773BE00 RSA_meth_get_flags+249792
+14: 00007FF7E8560556 uv_thread_detach+150
+15: 00007FF7E97A14F3 v8::base::UnsignedDivisionByConstant<unsigned __int64>+2903923
+16: 00007FFBF549E957 BaseThreadInitThunk+23
+17: 00007FFBF6CC7C1C RtlUserThreadStart+44
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
