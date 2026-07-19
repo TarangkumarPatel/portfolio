@@ -6,11 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed-admin": "node scripts/seed-admin-password.mjs"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "bcryptjs": "^3.0.3",
     "firebase": "^12.14.0",
+    "firebase-admin": "^14.2.0",
     "framer-motion": "^12.40.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.17.0",
     "next": "16.2.6",
     "nodemailer": "^9.0.3",

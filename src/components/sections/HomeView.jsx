@@ -61,19 +61,20 @@ const HomeView = ({ navigate }) => {
           </h1>
         </div>
 
-        <motion.div 
-          initial={{ opacity: 0, x: -40 }} 
-          animate={{ opacity: 1, x: 0 }} 
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.6 }} 
-          className="order-2 lg:order-1 lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:row-span-2 relative w-full max-w-[240px] md:max-w-[340px] aspect-[4/5] rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(234,88,12,0.15)] mx-auto lg:mx-0 lg:ml-auto group border border-white/5"
+        <motion.div
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
+          className="order-2 lg:order-1 lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:row-span-2 relative w-full max-w-[240px] md:max-w-[340px] md:aspect-[4/5] rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(234,88,12,0.15)] mx-auto lg:mx-0 lg:ml-auto group border border-white/5 flex flex-col md:block"
         >
-          <img 
-            //src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'%3E%3Crect width='400' height='500' fill='%230a0a0a'/%3E%3Ctext x='50%25' y='50%25' font-family='monospace' font-size='20' fill='%23444' text-anchor='middle' dominant-baseline='middle'%3E[ IMAGE HERE ]%3C/text%3E%3C/svg%3E" 
-            src="/Profile.jpg"
-            alt="Tarangkumar Patel" 
-            className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-1000 ease-[0.16,1,0.3,1]" 
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 md:p-8 flex flex-col justify-end">
+          <div className="relative aspect-[3/2] w-full md:absolute md:inset-0 md:aspect-auto">
+            <img
+              src="/Profile.jpg"
+              alt="Tarangkumar Patel"
+              className="w-full h-full object-cover object-top md:object-center scale-105 group-hover:scale-100 transition-transform duration-1000 ease-[0.16,1,0.3,1]"
+            />
+          </div>
+          <div className="relative md:absolute md:inset-0 bg-black/80 md:bg-transparent backdrop-blur-md md:backdrop-blur-none md:bg-gradient-to-t md:from-black/90 md:via-black/40 md:to-transparent px-6 pb-6 pt-3 md:p-8 flex flex-col justify-end">
             <h2 className="font-sans text-2xl md:text-3xl font-bold tracking-tight text-white mb-1">Tarangkumar Patel</h2>
             <p className="text-orange-400 font-mono text-xs md:text-sm mb-6">Toronto, Canada</p>
             <div className="flex gap-2 flex-wrap">

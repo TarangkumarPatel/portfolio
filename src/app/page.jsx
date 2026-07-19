@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Lock } from 'lucide-react';
 import Link from 'next/link';
@@ -26,6 +26,26 @@ export default function PortfolioApp() {
   const [navVisible, setNavVisible] = useState(true);
   const navExpanded = navVisible || menuOpen;
 
+  const [floatPos, setFloatPos] = useState({ top: 90, left: 300 });
+  const dragBoundsRef = useRef(null);
+  const autoCloseRef = useRef(null);
+
+  useEffect(() => {
+    setFloatPos({ top: 90, left: window.innerWidth - 72 });
+  }, []);
+
+  const openMobileMenu = () => {
+    setMenuOpen(true);
+    if (autoCloseRef.current) clearTimeout(autoCloseRef.current);
+    autoCloseRef.current = setTimeout(() => setMenuOpen(false), 5000);
+  };
+  const closeMobileMenu = () => {
+    setMenuOpen(false);
+    if (autoCloseRef.current) clearTimeout(autoCloseRef.current);
+  };
+
+  useEffect(() => () => { if (autoCloseRef.current) clearTimeout(autoCloseRef.current); }, []);
+
   useEffect(() => {
     if (!db) {
       setLoading(false);
@@ -33,7 +53,7 @@ export default function PortfolioApp() {
     }
     const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'projects'), (snapshot) => {
       if (!snapshot.empty) {
-        const projs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const projs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         setProjects(projs);
       } else {
         setProjects(INITIAL_PROJECTS);
@@ -49,7 +69,7 @@ export default function PortfolioApp() {
 
   const navigate = (view) => {
     setCurrentView(view);
-    setMenuOpen(false);
+    closeMobileMenu();
     window.scrollTo(0, 0);
     setNavVisible(true);
   };
@@ -122,28 +142,63 @@ export default function PortfolioApp() {
           ))}
         </div>
 
-        <div className="md:hidden flex items-center justify-between w-[90vw] bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-6 py-4 shadow-2xl">
-          <span className="font-bold text-white tracking-widest">T.J.P</span>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="text-white">
-            {menuOpen ? <X /> : <Menu />}
-          </button>
+        <div className="md:hidden flex justify-center w-full">
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div
+                key="expanded"
+                initial={{ opacity: 0, scale: 0.6, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.6, y: -10 }}
+                transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                className="flex items-center gap-1 px-2 py-2 max-w-[92vw] overflow-x-auto no-scrollbar bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl"
+              >
+                {navItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.id)}
+                    className={`relative shrink-0 px-3 py-2.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors duration-300 ${currentView === item.id ? 'text-black' : 'text-gray-400'}`}
+                  >
+                    {currentView === item.id && (
+                      <motion.div layoutId="mobile-nav-pill" className="absolute inset-0 bg-white rounded-full z-0" transition={{ type: "spring", stiffness: 300, damping: 30 }} />
+                    )}
+                    <span className="relative z-10">{item.label}</span>
+                  </button>
+                ))}
+                <button onClick={closeMobileMenu} aria-label="Close menu" className="shrink-0 w-8 h-8 ml-1 rounded-full flex items-center justify-center text-white/70">
+                  <X className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </nav>
 
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-[90] bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center gap-8 md:hidden"
-          >
-            {navItems.map((item) => (
-              <button key={item.id} onClick={() => navigate(item.id)} className={`text-4xl font-bold ${currentView === item.id ? 'text-white' : 'text-white/40'}`}>
-                {item.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Drag boundary for the floating mobile menu button */}
+      <div ref={dragBoundsRef} className="md:hidden fixed inset-4 pointer-events-none z-0" aria-hidden="true" />
+
+      <motion.button
+        drag
+        dragConstraints={dragBoundsRef}
+        dragMomentum={false}
+        dragElastic={0.08}
+        onTap={() => { if (!menuOpen) openMobileMenu(); }}
+        animate={{ opacity: menuOpen ? 0 : 1, scale: menuOpen ? 0.5 : 1 }}
+        transition={{ duration: 0.25 }}
+        style={{ top: floatPos.top, left: floatPos.left }}
+        className={`md:hidden fixed z-[110] w-14 h-14 rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl flex items-center justify-center text-white active:cursor-grabbing cursor-grab ${menuOpen ? 'pointer-events-none' : ''}`}
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5" />
+      </motion.button>
+
+      {menuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-[90]"
+          onClick={closeMobileMenu}
+          aria-hidden="true"
+        />
+      )}
 
       <main className="relative z-10 min-h-screen">
         <AnimatePresence mode="wait">
