@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { Mail, ArrowRight, FileText } from 'lucide-react';
-import { PageTransition, CyclingText, CinematicTextReveal, SocialPill, MagneticElement } from '@/components/ui/SharedUI';
+import { PageTransition, CyclingText, CinematicTextReveal, SocialPill, MagneticElement, MouseGradient } from '@/components/ui/SharedUI';
 
 // Custom SVG Icons to replace the missing Lucide brand icons
 const GithubIcon = ({ className }) => (
@@ -21,41 +21,14 @@ const LinkedinIcon = ({ className }) => (
 );
 
 const HomeView = ({ navigate }) => {
-  const mouseX = useMotionValue(typeof window !== "undefined" ? window.innerWidth / 2 : 0);
-  const mouseY = useMotionValue(typeof window !== "undefined" ? window.innerHeight / 2 : 0);
-
-  const springX = useSpring(mouseX, { stiffness: 1000, damping: 40, mass: 0.1 });
-  const springY = useSpring(mouseY, { stiffness: 1000, damping: 40, mass: 0.1 });
-
-  const parallaxX = useTransform(springX, x => (typeof window !== "undefined" ? (window.innerWidth / 2 - x) * 0.1 : 0));
-  const parallaxY = useTransform(springY, y => (typeof window !== "undefined" ? (window.innerHeight / 2 - y) * 0.1 : 0));
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [mouseX, mouseY]);
-
   return (
     <PageTransition className="justify-center relative overflow-hidden">
-      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none mix-blend-screen">
-        <motion.div 
-          style={{ left: springX, top: springY, x: "-50%", y: "-50%" }}
-          className="absolute w-[350px] h-[350px] bg-orange-500 rounded-full blur-[80px]" 
-        />
-        <motion.div 
-          style={{ x: parallaxX, y: parallaxY }}
-          className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-rose-600 rounded-full blur-[60px]" 
-        />
-      </div>
+      <MouseGradient />
 
-      <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 max-w-[1440px] w-full items-center z-10 my-auto">
-        
-        <div className="order-1 lg:order-2 lg:col-span-8 lg:col-start-5 text-center lg:text-left flex flex-col justify-center lg:pt-8">
-          <h1 className="font-hero text-5xl md:text-7xl lg:text-[7rem] font-bold tracking-tighter leading-[0.9] uppercase flex flex-col items-center lg:items-start mb-0">
+      <div className="grid lg:grid-cols-[300px_auto] gap-8 lg:gap-16 w-full lg:w-fit mx-auto items-center z-10 my-auto">
+
+        <div className="order-1 lg:order-2 lg:col-start-2 lg:row-start-1 lg:max-w-xl text-center lg:text-left flex flex-col justify-center lg:pt-8">
+          <h1 className="font-hero text-5xl md:text-7xl font-bold tracking-tighter leading-[0.9] uppercase flex flex-col items-center lg:items-start mb-0">
             <CyclingText words={["Creative", "Full-Stack", "Software"]} className="bg-gradient-to-r from-orange-400 via-amber-200 to-white bg-clip-text text-transparent pr-1 mb-[-0.1em]" delay={0.2} />
             <CinematicTextReveal text="Developer" delay={0.1} className="text-white" />
           </h1>
@@ -65,7 +38,7 @@ const HomeView = ({ navigate }) => {
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
-          className="order-2 lg:order-1 lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:row-span-2 relative w-full max-w-[240px] md:max-w-[340px] md:aspect-[4/5] rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(234,88,12,0.15)] mx-auto lg:mx-0 lg:ml-auto group border border-white/5 flex flex-col md:block"
+          className="order-2 lg:order-1 lg:col-start-1 lg:row-start-1 lg:row-span-2 relative w-full max-w-[220px] md:max-w-[300px] md:aspect-[4/5] rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(234,88,12,0.15)] mx-auto group border border-white/5 flex flex-col md:block"
         >
           <div className="relative aspect-[3/2] w-full md:absolute md:inset-0 md:aspect-auto">
             <img
@@ -74,10 +47,10 @@ const HomeView = ({ navigate }) => {
               className="w-full h-full object-cover object-top md:object-center scale-105 group-hover:scale-100 transition-transform duration-1000 ease-[0.16,1,0.3,1]"
             />
           </div>
-          <div className="relative md:absolute md:inset-0 bg-black/80 md:bg-transparent backdrop-blur-md md:backdrop-blur-none md:bg-gradient-to-t md:from-black/90 md:via-black/40 md:to-transparent px-6 pb-6 pt-3 md:p-8 flex flex-col justify-end">
-            <h2 className="font-sans text-2xl md:text-3xl font-bold tracking-tight text-white mb-1">Tarangkumar Patel</h2>
-            <p className="text-orange-400 font-mono text-xs md:text-sm mb-6">Toronto, Canada</p>
-            <div className="flex gap-2 flex-wrap">
+          <div className="relative md:absolute md:inset-0 bg-black/80 md:bg-transparent backdrop-blur-md md:backdrop-blur-none md:bg-gradient-to-t md:from-black/90 md:via-black/40 md:to-transparent px-6 pb-5 pt-2 md:p-8 flex flex-col justify-end">
+            <h2 className="font-sans text-2xl md:text-lg font-bold tracking-tight text-white mb-1 md:mb-0.5">Tarangkumar Patel</h2>
+            <p className="text-orange-400 font-mono text-xs mb-3 md:mb-4">Toronto, Canada</p>
+            <div className="flex gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto no-scrollbar">
               <SocialPill icon={GithubIcon} label="GitHub" href="https://github.com/TarangkumarPatel" />
               <SocialPill icon={LinkedinIcon} label="LinkedIn" href="https://www.linkedin.com/in/tarangkumarpatel/" />
               <SocialPill icon={Mail} label="Email" href="mailto:tarangkumar.dev@gmail.com" copyValue="tarangkumar.dev@gmail.com" />
@@ -86,7 +59,7 @@ const HomeView = ({ navigate }) => {
           </div>
         </motion.div>
 
-        <div className="order-3 lg:order-3 lg:col-span-8 lg:col-start-5 text-center lg:text-left flex flex-col items-center lg:items-start">
+        <div className="order-3 lg:order-3 lg:col-start-2 lg:row-start-2 lg:max-w-xl text-center lg:text-left flex flex-col items-center lg:items-start">
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.8 }} className="text-base md:text-xl text-white/60 font-light max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed px-4 lg:px-0">
             Hi, I'm <strong className="text-white font-medium">Tarangkumar Janakkumar Patel</strong>. I engineer digital experiences that bridge the gap between high-end product design and robust full-stack architecture.
           </motion.p>

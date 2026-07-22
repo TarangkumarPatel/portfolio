@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { db, appId } from '@/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { INITIAL_PROJECTS } from '@/data/mockProjects';
+import { INITIAL_HOBBIES } from '@/data/mockHobbies';
 
 // Shared UI
 import { CustomCursor } from '@/components/ui/SharedUI';
+import Footer from '@/components/layout/Footer';
 
 // Sections
 import HomeView from '@/components/sections/HomeView';
@@ -20,6 +22,7 @@ import ContactView from '@/components/sections/ContactView';
 export default function PortfolioApp() {
   const [currentView, setCurrentView] = useState('home');
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
+  const [hobbies, setHobbies] = useState(INITIAL_HOBBIES);
   const [loading, setLoading] = useState(true);
   
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,6 +66,22 @@ export default function PortfolioApp() {
       console.error("Error fetching projects:", error);
       setProjects(INITIAL_PROJECTS);
       setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'hobbies'), (snapshot) => {
+      if (!snapshot.empty) {
+        const hobs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        setHobbies(hobs);
+      } else {
+        setHobbies(INITIAL_HOBBIES);
+      }
+    }, (error) => {
+      console.error("Error fetching hobbies:", error);
+      setHobbies(INITIAL_HOBBIES);
     });
     return () => unsub();
   }, []);
@@ -205,13 +224,14 @@ export default function PortfolioApp() {
           {currentView === 'home' && <HomeView key="home" navigate={navigate} />}
           {currentView === 'about' && <AboutView key="about" />}
           {currentView === 'projects' && <ProjectsView key="projects" projects={projects} />}
-          {currentView === 'hobbies' && <HobbiesView key="hobbies" />}
+          {currentView === 'hobbies' && <HobbiesView key="hobbies" hobbies={hobbies} />}
           {currentView === 'contact' && <ContactView key="contact" />}
         </AnimatePresence>
       </main>
 
-      {/* FIXED: Now uses Next.js Link to route directly to your standalone Admin page */}
-      <Link href="/admin" className="fixed bottom-4 right-4 w-12 h-12 flex items-center justify-center opacity-0 hover:opacity-20 cursor-pointer z-50 transition-opacity">
+      <Footer />
+
+      <Link href="/admin" className="fixed bottom-12 right-4 w-12 h-12 flex items-center justify-center opacity-50 hover:opacity-90 cursor-pointer z-50 transition-opacity">
         <Lock className="w-4 h-4 text-white" />
       </Link>
     </div>

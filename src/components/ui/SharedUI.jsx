@@ -1,6 +1,39 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+
+export const MouseGradient = () => {
+  const mouseX = useMotionValue(typeof window !== "undefined" ? window.innerWidth / 2 : 0);
+  const mouseY = useMotionValue(typeof window !== "undefined" ? window.innerHeight / 2 : 0);
+
+  const springX = useSpring(mouseX, { stiffness: 1000, damping: 40, mass: 0.1 });
+  const springY = useSpring(mouseY, { stiffness: 1000, damping: 40, mass: 0.1 });
+
+  const parallaxX = useTransform(springX, x => (typeof window !== "undefined" ? (window.innerWidth / 2 - x) * 0.1 : 0));
+  const parallaxY = useTransform(springY, y => (typeof window !== "undefined" ? (window.innerHeight / 2 - y) * 0.1 : 0));
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [mouseX, mouseY]);
+
+  return (
+    <div className="absolute inset-0 z-0 opacity-40 pointer-events-none mix-blend-screen overflow-hidden">
+      <motion.div
+        style={{ left: springX, top: springY, x: "-50%", y: "-50%" }}
+        className="absolute w-[350px] h-[350px] bg-orange-500 rounded-full blur-[80px]"
+      />
+      <motion.div
+        style={{ x: parallaxX, y: parallaxY }}
+        className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-rose-600 rounded-full blur-[60px]"
+      />
+    </div>
+  );
+};
 
 export const pageVariants = {
   initial: { opacity: 0, scale: 0.98, y: 20 },
@@ -148,9 +181,9 @@ export const SocialPill = ({ icon: Icon, label, href, copyValue }) => {
       target="_blank" 
       rel="noreferrer" 
       onClick={handleClick}
-      className="group/pill flex items-center h-10 bg-white/10 backdrop-blur-md border border-white/10 rounded-full px-3 hover:bg-white/20 hover:border-orange-500/50 transition-all duration-500 ease-[0.16,1,0.3,1]"
+      className="group/pill flex items-center shrink-0 h-8 sm:h-10 bg-white/10 backdrop-blur-md border border-white/10 rounded-full px-2.5 sm:px-3 hover:bg-white/20 hover:border-orange-500/50 transition-all duration-500 ease-[0.16,1,0.3,1]"
     >
-      <Icon className="w-4 h-4 text-white shrink-0 group-hover/pill:text-orange-400 transition-colors" />
+      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0 group-hover/pill:text-orange-400 transition-colors" />
       <div className="grid grid-cols-[0fr] group-hover/pill:grid-cols-[1fr] transition-all duration-500 ease-[0.16,1,0.3,1]">
         <div className="overflow-hidden whitespace-nowrap">
           <span className="opacity-0 group-hover/pill:opacity-100 transition-opacity duration-300 ease-out delay-100 text-xs font-medium text-white pl-2 block">

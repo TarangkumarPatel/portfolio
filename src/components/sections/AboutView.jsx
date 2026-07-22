@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
-import { PageTransition, textReveal, fadeUp } from '@/components/ui/SharedUI';
+import { PageTransition, textReveal, fadeUp, MouseGradient } from '@/components/ui/SharedUI';
 
 const skills = [
   "React", "Next.js", "TypeScript", "JavaScript", "Angular", "Tailwind CSS", "Bootstrap",
@@ -189,28 +189,32 @@ const EducationItem = ({ active, degree, school, period }) => (
 
 const AboutView = () => {
   return (
-    <PageTransition className="pt-28 pb-16 px-6 max-w-5xl mx-auto flex-col items-start justify-start">
-      <div className="w-full my-auto">
-        <div className="overflow-hidden mb-8 text-center md:text-left">
+    <PageTransition className="pt-32 pb-20 px-6 flex-col items-start justify-start relative overflow-hidden">
+      <MouseGradient />
+      <div className="relative z-10 max-w-6xl w-full mx-auto my-auto">
+        <div className="overflow-hidden mb-10 md:mb-12 text-center md:text-left">
           <motion.h2 variants={textReveal} className="font-display text-5xl md:text-6xl font-bold text-white tracking-tight">
             Engineering <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-rose-500 text-4xl md:text-5xl">the invisible.</span>
           </motion.h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          <div>
-            <motion.div variants={fadeUp} className="space-y-4 text-sm md:text-base text-gray-400 font-light leading-relaxed mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-stretch">
+          <motion.div variants={fadeUp} className="bg-zinc-900/50 backdrop-blur-xl border border-white/5 p-8 md:p-10 rounded-[2rem] flex flex-col">
+            <div className="space-y-5 text-base md:text-lg text-gray-300 font-light leading-relaxed flex-1">
               <p>
                 I'm a software developer who cares as much about how something feels as how it's built. I like taking a rough idea and turning it into a product that's fast, reliable, and genuinely enjoyable to use — the kind of interface where nothing gets in the way.
               </p>
               <p>
                 My work sits where thoughtful engineering meets clean, intentional design. From data models on the backend to the last few pixels of a transition, I sweat the details so the end result feels effortless. I'm always learning, shipping, and refining.
               </p>
-            </motion.div>
-          </div>
+            </div>
+            <p className="mt-8 pt-6 border-t border-white/10 font-mono text-xs md:text-sm text-orange-400 tracking-[0.3em] uppercase">
+              Eat. Code. Sleep. Repeat.
+            </p>
+          </motion.div>
 
-          <div className="space-y-8">
-            <motion.div variants={fadeUp}>
+          <motion.div variants={fadeUp} className="bg-zinc-900/50 backdrop-blur-xl border border-white/5 p-8 md:p-10 rounded-[2rem] space-y-10">
+            <div>
               <h3 className="font-display text-white text-sm font-bold tracking-widest uppercase mb-5 flex items-center gap-4">
                 <span className="w-12 h-[1px] bg-white/20"></span> Education
               </h3>
@@ -227,15 +231,15 @@ const AboutView = () => {
                   period="January 2021 - April 2022"
                 />
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div variants={fadeUp}>
+            <div>
               <h3 className="font-display text-white text-sm font-bold tracking-widest uppercase mb-6 flex items-center gap-4">
                 <span className="w-12 h-[1px] bg-white/20"></span> Tech Arsenal
               </h3>
               <TechArsenal />
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </PageTransition>

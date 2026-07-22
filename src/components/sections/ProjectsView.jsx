@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageTransition, textReveal, fadeUp } from '@/components/ui/SharedUI';
@@ -15,7 +15,9 @@ const getTech = (p) => p.tech || p.techStack || [];
 
 const ProjectsView = ({ projects }) => {
   const [hovered, setHovered] = useState(null);
+  const [activeId, setActiveId] = useState(null);
   const trackRef = useRef(null);
+  const cardRefs = useRef({});
 
   const scrollByCard = (dir) => {
     const track = trackRef.current;
@@ -29,20 +31,60 @@ const ProjectsView = ({ projects }) => {
     return [...projects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }, [projects]);
 
+  const updateActiveCard = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const trackRect = track.getBoundingClientRect();
+    const center = trackRect.left + trackRect.width / 2;
+    let closest = null;
+    let closestDist = Infinity;
+    sortedProjects.forEach((p) => {
+      const el = cardRefs.current[p.id];
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const dist = Math.abs(rect.left + rect.width / 2 - center);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = p.id;
+      }
+    });
+    if (closest) setActiveId(closest);
+  }, [sortedProjects]);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    let raf = null;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { updateActiveCard(); raf = null; });
+    };
+    updateActiveCard();
+    track.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      track.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [updateActiveCard]);
+
+  const bgProject = hovered || sortedProjects.find(p => p.id === activeId) || sortedProjects[0] || null;
+
   return (
     <PageTransition className="w-full relative flex-col items-start justify-start">
       {/* Full-page background preview */}
       <AnimatePresence>
-        {hovered && (
+        {bgProject && (
           <motion.div
-            key={hovered.id}
+            key={bgProject.id}
             initial={{ opacity: 0, scale: 1.08 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 z-0 pointer-events-none"
           >
-            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${hovered.imageUrl})` }} />
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgProject.imageUrl})` }} />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 to-black/50" />
             <div className="absolute inset-0 bg-black/25" />
           </motion.div>
@@ -82,10 +124,11 @@ const ProjectsView = ({ projects }) => {
             className="no-scrollbar flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-pl-6 pb-4 -mx-6 px-6"
           >
             {sortedProjects.map((project, index) => {
-              const isHovered = hovered?.id === project.id;
+              const isActive = bgProject?.id === project.id;
               return (
                 <motion.div
                   data-carousel-card
+                  ref={(el) => { if (el) cardRefs.current[project.id] = el; }}
                   variants={fadeUp}
                   key={project.id}
                   onMouseEnter={() => setHovered(project)}
@@ -99,7 +142,7 @@ const ProjectsView = ({ projects }) => {
                       src={project.imageUrl}
                       alt={project.title}
                       className="w-full h-full object-cover"
-                      animate={{ scale: isHovered ? 1.06 : 1 }}
+                      animate={{ scale: isActive ? 1.06 : 1 }}
                       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -107,7 +150,7 @@ const ProjectsView = ({ projects }) => {
                       0{index + 1}
                     </span>
                     <motion.div
-                      animate={{ rotate: isHovered ? 0 : -45, scale: isHovered ? 1 : 0.9, opacity: isHovered ? 1 : 0.6 }}
+                      animate={{ rotate: isActive ? 0 : -45, scale: isActive ? 1 : 0.9, opacity: isActive ? 1 : 0.6 }}
                       transition={{ type: "spring", stiffness: 200, damping: 18 }}
                       className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white group-hover:bg-orange-500 group-hover:border-orange-500 transition-colors duration-300"
                     >
