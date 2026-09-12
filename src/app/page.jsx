@@ -7,6 +7,7 @@ import { db, appId } from '@/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { INITIAL_PROJECTS } from '@/data/mockProjects';
 import { INITIAL_HOBBIES } from '@/data/mockHobbies';
+import { INITIAL_TESTIMONIALS } from '@/data/mockTestimonials';
 
 // Shared UI
 import { CustomCursor } from '@/components/ui/SharedUI';
@@ -17,12 +18,14 @@ import HomeView from '@/components/sections/HomeView';
 import AboutView from '@/components/sections/AboutView';
 import ProjectsView from '@/components/sections/ProjectsView';
 import HobbiesView from '@/components/sections/HobbiesView';
+import TestimonialsView from '@/components/sections/TestimonialsView';
 import ContactView from '@/components/sections/ContactView';
 
 export default function PortfolioApp() {
   const [currentView, setCurrentView] = useState('home');
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
   const [hobbies, setHobbies] = useState(INITIAL_HOBBIES);
+  const [testimonials, setTestimonials] = useState(INITIAL_TESTIMONIALS);
   const [loading, setLoading] = useState(true);
   
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,6 +89,18 @@ export default function PortfolioApp() {
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'testimonials'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      setTestimonials(items);
+    }, (error) => {
+      console.error("Error fetching testimonials:", error);
+      setTestimonials(INITIAL_TESTIMONIALS);
+    });
+    return () => unsub();
+  }, []);
+
   const navigate = (view) => {
     setCurrentView(view);
     closeMobileMenu();
@@ -113,6 +128,7 @@ export default function PortfolioApp() {
     { id: 'about', label: 'About Me' },
     { id: 'projects', label: 'Work' },
     { id: 'hobbies', label: 'Life' },
+    { id: 'testimonials', label: 'Testimonials' },
     { id: 'contact', label: 'Contact' }
   ];
 
@@ -225,6 +241,7 @@ export default function PortfolioApp() {
           {currentView === 'about' && <AboutView key="about" />}
           {currentView === 'projects' && <ProjectsView key="projects" projects={projects} />}
           {currentView === 'hobbies' && <HobbiesView key="hobbies" hobbies={hobbies} />}
+          {currentView === 'testimonials' && <TestimonialsView key="testimonials" testimonials={testimonials} />}
           {currentView === 'contact' && <ContactView key="contact" />}
         </AnimatePresence>
       </main>

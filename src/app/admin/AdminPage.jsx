@@ -1,10 +1,13 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Lock, Plus, Edit2, Trash2, Save, XCircle, ArrowLeft, LogOut, GripVertical } from 'lucide-react';
+import { Lock, Plus, Edit2, Trash2, Save, XCircle, ArrowLeft, LogOut, GripVertical, Check, X as XIcon } from 'lucide-react';
 import Link from 'next/link';
 import { PageTransition, MouseGradient, CustomCursor } from '@/components/ui/SharedUI';
 import Footer from '@/components/layout/Footer';
+import { RELATIONSHIP_OPTIONS } from '@/data/mockTestimonials';
+
+const STATUS_RANK = { pending: 0, approved: 1, rejected: 2 };
 
 const AdminPage = () => {
   const [checkingSession, setCheckingSession] = useState(true);
@@ -17,6 +20,7 @@ const AdminPage = () => {
   const [projects, setProjects] = useState([]);
   const [messages, setMessages] = useState([]);
   const [hobbies, setHobbies] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -25,12 +29,21 @@ const AdminPage = () => {
   const [isEditingHobby, setIsEditingHobby] = useState(false);
   const [currentHobby, setCurrentHobby] = useState(null);
 
+  const [isEditingTestimonial, setIsEditingTestimonial] = useState(false);
+  const [currentTestimonial, setCurrentTestimonial] = useState(null);
+
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const sortedProjects = useMemo(
     () => [...projects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [projects]
   );
+
+  const sortedTestimonials = useMemo(
+    () => [...testimonials].sort((a, b) => (STATUS_RANK[a.status] ?? 1) - (STATUS_RANK[b.status] ?? 1)),
+    [testimonials]
+  );
+  const pendingCount = useMemo(() => testimonials.filter(t => t.status === 'pending').length, [testimonials]);
 
   useEffect(() => {
     fetch('/api/admin/session')
@@ -43,14 +56,16 @@ const AdminPage = () => {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [projRes, msgRes, hobRes] = await Promise.all([
+      const [projRes, msgRes, hobRes, testRes] = await Promise.all([
         fetch('/api/admin/projects'),
         fetch('/api/admin/messages'),
         fetch('/api/admin/hobbies'),
+        fetch('/api/admin/testimonials'),
       ]);
       if (projRes.ok) setProjects((await projRes.json()).projects);
       if (msgRes.ok) setMessages((await msgRes.json()).messages);
       if (hobRes.ok) setHobbies((await hobRes.json()).hobbies);
+      if (testRes.ok) setTestimonials((await testRes.json()).testimonials);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     }
@@ -90,6 +105,7 @@ const AdminPage = () => {
     setProjects([]);
     setMessages([]);
     setHobbies([]);
+    setTestimonials([]);
   };
 
   const handleSaveProject = async (e) => {
@@ -174,6 +190,47 @@ const AdminPage = () => {
     }
   };
 
+  const handleSaveTestimonial = async (e) => {
+    e.preventDefault();
+    try {
+      const isEdit = Boolean(currentTestimonial.id);
+      const res = await fetch(isEdit ? `/api/admin/testimonials/${currentTestimonial.id}` : '/api/admin/testimonials', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentTestimonial),
+      });
+      if (res.ok) {
+        setIsEditingTestimonial(false);
+        setCurrentTestimonial(null);
+        loadData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteTestimonial = async (id) => {
+    try {
+      const res = await fetch(`/api/admin/testimonials/${id}`, { method: 'DELETE' });
+      if (res.ok) loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSetTestimonialStatus = async (t, status) => {
+    try {
+      const res = await fetch(`/api/admin/testimonials/${t.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...t, status }),
+      });
+      if (res.ok) loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const requestDelete = (type, id, label) => setConfirmDelete({ type, id, label });
 
   const handleConfirmDelete = async () => {
@@ -182,6 +239,7 @@ const AdminPage = () => {
     if (type === 'project') await handleDeleteProject(id);
     else if (type === 'message') await handleDeleteMessage(id);
     else if (type === 'hobby') await handleDeleteHobby(id);
+    else if (type === 'testimonial') await handleDeleteTestimonial(id);
     setConfirmDelete(null);
   };
 
@@ -194,7 +252,7 @@ const AdminPage = () => {
       <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
         <CustomCursor />
         <MouseGradient />
-        <Link href="/" className="absolute top-8 left-8 text-neutral-500 hover:text-white flex items-center gap-2 z-10">
+        <Link href="/" className="absolute top-8 left-8 text-neutral-500 hover:text-white flex items-center gap-2 z-50">
           <ArrowLeft size={20} /> Back to Site
         </Link>
         <PageTransition className="justify-center relative z-10">
@@ -232,6 +290,12 @@ const AdminPage = () => {
             <div className="flex gap-1 md:gap-2 p-1 bg-white/5 border border-white/10 rounded-xl overflow-x-auto no-scrollbar">
               <button onClick={() => setActiveTab('projects')} className={`shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'projects' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>Projects</button>
               <button onClick={() => setActiveTab('hobbies')} className={`shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'hobbies' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>Hobbies</button>
+              <button onClick={() => setActiveTab('testimonials')} className={`relative shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'testimonials' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>
+                Testimonials
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">{pendingCount}</span>
+                )}
+              </button>
               <button onClick={() => setActiveTab('messages')} className={`shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'messages' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>Messages</button>
             </div>
             <button onClick={handleLogout} className="shrink-0 flex items-center gap-2 text-gray-400 hover:text-white text-xs md:text-sm px-2 md:px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
@@ -326,6 +390,77 @@ const AdminPage = () => {
                 </div>
               ))}
               {!loadingData && hobbies.length === 0 && <p className="text-gray-500">No hobbies found.</p>}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'testimonials' && (
+          <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 w-full mb-20">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-bold text-white">Testimonials</h3>
+              <button onClick={() => { setCurrentTestimonial({ name: '', title: '', organization: '', relationship: RELATIONSHIP_OPTIONS[0], message: '', linkedinUrl: '', avatarUrl: '', status: 'approved' }); setIsEditingTestimonial(true); }} className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-medium">
+                <Plus className="w-4 h-4" /> New Testimonial
+              </button>
+            </div>
+
+            {isEditingTestimonial && (
+              <motion.form initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} onSubmit={handleSaveTestimonial} className="bg-black/50 p-6 rounded-2xl border border-white/5 space-y-6 mb-8">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-white font-bold">{currentTestimonial?.id ? 'Edit Testimonial' : 'New Testimonial'}</h4>
+                  <button type="button" onClick={() => setIsEditingTestimonial(false)} className="text-gray-400 hover:text-white"><XCircle /></button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">Name</label><input required type="text" value={currentTestimonial?.name} onChange={e => setCurrentTestimonial({ ...currentTestimonial, name: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div>
+                    <label className="block text-xs uppercase text-gray-500 mb-1">Relationship</label>
+                    <select value={currentTestimonial?.relationship || RELATIONSHIP_OPTIONS[0]} onChange={e => setCurrentTestimonial({ ...currentTestimonial, relationship: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500">
+                      {RELATIONSHIP_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  </div>
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">Title / Designation</label><input required type="text" value={currentTestimonial?.title} onChange={e => setCurrentTestimonial({ ...currentTestimonial, title: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">Organization</label><input required type="text" value={currentTestimonial?.organization} onChange={e => setCurrentTestimonial({ ...currentTestimonial, organization: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div className="md:col-span-2"><label className="block text-xs uppercase text-gray-500 mb-1">Testimonial</label><textarea required rows={4} value={currentTestimonial?.message} onChange={e => setCurrentTestimonial({ ...currentTestimonial, message: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">LinkedIn (optional)</label><input type="url" value={currentTestimonial?.linkedinUrl || ''} onChange={e => setCurrentTestimonial({ ...currentTestimonial, linkedinUrl: e.target.value })} placeholder="https://..." className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">Avatar URL (optional)</label><input type="url" value={currentTestimonial?.avatarUrl || ''} onChange={e => setCurrentTestimonial({ ...currentTestimonial, avatarUrl: e.target.value })} placeholder="https://..." className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div>
+                    <label className="block text-xs uppercase text-gray-500 mb-1">Status</label>
+                    <select value={currentTestimonial?.status || 'approved'} onChange={e => setCurrentTestimonial({ ...currentTestimonial, status: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500">
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" className="bg-white text-black font-bold py-3 px-8 rounded-lg flex items-center gap-2 hover:bg-gray-200"><Save className="w-5 h-5" /> Save Testimonial</button>
+              </motion.form>
+            )}
+
+            <div className="space-y-4">
+              {sortedTestimonials.map(t => (
+                <div key={t.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-black/40 border border-white/5 p-4 rounded-xl hover:border-white/20 transition-colors">
+                  <div className="flex items-start gap-4 min-w-0">
+                    <span className={`shrink-0 mt-1 text-[10px] font-mono uppercase px-2 py-1 rounded-full ${t.status === 'approved' ? 'bg-green-500/10 text-green-400' : t.status === 'rejected' ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                      {t.status || 'pending'}
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="text-white font-medium">{t.name} <span className="text-gray-500 text-xs font-normal">· {t.title}{t.organization ? `, ${t.organization}` : ''}</span></h4>
+                      <p className="text-gray-400 text-xs line-clamp-2 max-w-xl mt-1">{t.message}</p>
+                      {t.email && <p className="text-gray-600 text-[11px] font-mono mt-1">{t.email}</p>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    {t.status !== 'approved' && (
+                      <button onClick={() => handleSetTestimonialStatus(t, 'approved')} title="Approve" className="p-2 bg-green-500/10 text-green-400 hover:text-green-300 rounded-lg transition-colors"><Check className="w-4 h-4" /></button>
+                    )}
+                    {t.status !== 'rejected' && (
+                      <button onClick={() => handleSetTestimonialStatus(t, 'rejected')} title="Reject" className="p-2 bg-yellow-500/10 text-yellow-400 hover:text-yellow-300 rounded-lg transition-colors"><XIcon className="w-4 h-4" /></button>
+                    )}
+                    <button onClick={() => { setCurrentTestimonial(t); setIsEditingTestimonial(true); }} className="p-2 bg-white/5 text-gray-300 hover:text-white rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button onClick={() => requestDelete('testimonial', t.id, `testimonial from ${t.name}`)} className="p-2 bg-red-500/10 text-red-400 hover:text-red-300 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              ))}
+              {!loadingData && testimonials.length === 0 && <p className="text-gray-500">No testimonials found. Share the hidden submission link with a professor or manager to collect one.</p>}
             </div>
           </div>
         )}

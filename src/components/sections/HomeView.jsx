@@ -28,6 +28,18 @@ const HomeView = ({ navigate }) => {
       <div className="grid lg:grid-cols-[300px_auto] gap-8 lg:gap-16 w-full lg:w-fit mx-auto items-center z-10 my-auto">
 
         <div className="order-1 lg:order-2 lg:col-start-2 lg:row-start-1 lg:max-w-xl text-center lg:text-left flex flex-col justify-center lg:pt-8">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="inline-flex items-center gap-2 self-center lg:self-start px-4 py-1.5 mb-5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-300 text-xs md:text-sm font-medium"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+            </span>
+            Open to Summer 2027 internship opportunities
+          </motion.div>
           <h1 className="font-hero text-5xl md:text-7xl font-bold tracking-tighter leading-[0.9] uppercase flex flex-col items-center lg:items-start mb-0">
             <CyclingText words={["Creative", "Full-Stack", "Software"]} className="bg-gradient-to-r from-orange-400 via-amber-200 to-white bg-clip-text text-transparent pr-1 mb-[-0.1em]" delay={0.2} />
             <CinematicTextReveal text="Developer" delay={0.1} className="text-white" />
