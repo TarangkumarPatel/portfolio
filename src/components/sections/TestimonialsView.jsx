@@ -1,7 +1,7 @@
 "use client";
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Quote, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { PageTransition, textReveal, fadeUp } from '@/components/ui/SharedUI';
 
@@ -20,7 +20,6 @@ const TestimonialCard = ({ t }) => {
 
   return (
     <motion.div variants={fadeUp} className="group relative rounded-3xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/5 p-6 md:p-8 flex flex-col">
-      <Quote className="w-8 h-8 text-orange-500/30 mb-4" />
       <p className="text-gray-200 text-sm md:text-base leading-relaxed flex-1 mb-6">
         &ldquo;{t.message}&rdquo;
       </p>
@@ -38,8 +37,8 @@ const TestimonialCard = ({ t }) => {
           </div>
         )}
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h4 className="text-white font-semibold text-sm truncate">{t.name}</h4>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="text-white font-semibold text-sm">{t.name}</h4>
             {t.linkedinUrl && (
               <a href={t.linkedinUrl} target="_blank" rel="noreferrer" aria-label={`${t.name} on LinkedIn`} className="text-gray-500 hover:text-orange-400 transition-colors shrink-0">
                 <LinkedinIcon className="w-3.5 h-3.5" />
@@ -47,6 +46,11 @@ const TestimonialCard = ({ t }) => {
             )}
           </div>
           <p className="text-gray-400 text-xs truncate">{t.title}{t.organization ? ` · ${t.organization}` : ''}</p>
+          {t.email && (
+            <a href={`mailto:${t.email}`} className="text-gray-400 text-xs hover:text-orange-400 transition-colors block mt-0.5">
+              {t.email}
+            </a>
+          )}
         </div>
       </div>
     </motion.div>

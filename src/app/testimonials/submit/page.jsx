@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import Footer from '@/components/layout/Footer';
 import { RELATIONSHIP_OPTIONS } from '@/data/mockTestimonials';
 
-const EMPTY_FORM = { name: '', title: '', organization: '', relationship: RELATIONSHIP_OPTIONS[0], message: '', email: '', linkedinUrl: '' };
+const EMPTY_FORM = { name: '', title: '', organization: '', relationship: RELATIONSHIP_OPTIONS[0], relationshipOther: '', message: '', email: '', linkedinUrl: '' };
 
 export default function SubmitTestimonialPage() {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -84,7 +84,7 @@ export default function SubmitTestimonialPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-xs font-mono uppercase text-gray-500 mb-2">Your Name</label>
-                    <input required type="text" value={form.name} onChange={update('name')} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-all" placeholder="Jane Smith" />
+                    <input required type="text" value={form.name} onChange={update('name')} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-all" placeholder="Tarangkumar Patel" />
                   </div>
                   <div>
                     <label className="block text-xs font-mono uppercase text-gray-500 mb-2">Relationship</label>
@@ -98,13 +98,19 @@ export default function SubmitTestimonialPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-mono uppercase text-gray-500 mb-2">Organization</label>
-                    <input required type="text" value={form.organization} onChange={update('organization')} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-all" placeholder="University of Toronto" />
+                    <input required type="text" value={form.organization} onChange={update('organization')} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-all" placeholder="Seneca Polytechnic" />
                   </div>
+                  {form.relationship === 'Other' && (
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-mono uppercase text-gray-500 mb-2">Please specify your relationship</label>
+                      <input required type="text" value={form.relationshipOther} onChange={update('relationshipOther')} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-all" placeholder="e.g. Neighbor, Family friend" />
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-mono uppercase text-gray-500 mb-2">Testimonial</label>
-                  <textarea required rows={5} maxLength={2000} value={form.message} onChange={update('message')} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-all resize-none" placeholder="Share your experience working with Tarangkumar..." />
+                  <textarea required rows={5} maxLength={2000} value={form.message} onChange={update('message')} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-all resize-none" placeholder="Share a few words for Tarangkumar" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

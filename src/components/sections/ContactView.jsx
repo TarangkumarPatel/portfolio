@@ -1,15 +1,57 @@
 "use client";
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Mail, Smartphone, Send } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Smartphone, Send, X } from 'lucide-react';
 import { PageTransition, textReveal, fadeUp, MouseGradient } from '@/components/ui/SharedUI';
 import { db, appId } from '@/lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
+const ThankYouModal = ({ open, onClose }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-6"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-zinc-900 border border-white/10 rounded-2xl p-8 max-w-sm w-full text-center"
+          >
+            <button onClick={onClose} aria-label="Close" className="absolute top-5 right-5 text-gray-400 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            <h4 className="text-white text-xl font-bold mb-3">Thank You for Connecting!</h4>
+            <p className="text-gray-400 text-sm leading-relaxed">Please give me some time to reach back to you. Thank you!</p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+};
+
 const ContactView = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-  const [status, setStatus] = useState('idle'); 
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+  const [status, setStatus] = useState('idle');
   const [copiedItem, setCopiedItem] = useState(null);
+  const [showThankYou, setShowThankYou] = useState(false);
 
   const handleCopy = (value, type) => {
     const textArea = document.createElement("textarea");
@@ -28,18 +70,25 @@ const ContactView = () => {
     e.preventDefault();
     setStatus('loading');
     try {
-      if(db) {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
-          ...formData, createdAt: new Date().toISOString()
-        });
-      }
       try {
-        await fetch('/api/notify', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
-        });
-      } catch (apiErr) { console.log("Backend API not connected in local preview."); }
+        if(db) {
+          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+            ...formData, createdAt: new Date().toISOString()
+          });
+        }
+      } catch (dbErr) { console.error("Failed to save message to Firestore:", dbErr); }
+
+      const res = await fetch('/api/notify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to send notification');
+      }
+
       setStatus('success');
-      setFormData({ name: '', email: '', message: '' });
+      setFormData({ name: '', email: '', phone: '', message: '' });
+      setShowThankYou(true);
       setTimeout(() => setStatus('idle'), 5000);
     } catch (error) {
       console.error("Error sending message:", error);
@@ -75,6 +124,10 @@ const ContactView = () => {
               <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 focus:bg-black/80 transition-all" placeholder="john@example.com" />
             </div>
             <div>
+              <label className="block text-xs font-mono uppercase text-gray-500 mb-2">Phone Number <span className="text-gray-600 normal-case">(optional)</span></label>
+              <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 focus:bg-black/80 transition-all" placeholder="+1 (555) 123-4567" />
+            </div>
+            <div>
               <label className="block text-xs font-mono uppercase text-gray-500 mb-2">Message</label>
               <textarea required rows={4} value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 focus:bg-black/80 transition-all resize-none" placeholder="Tell me about your project..." />
             </div>
@@ -106,6 +159,7 @@ const ContactView = () => {
           </a>
         </motion.div>
       </div>
+      <ThankYouModal open={showThankYou} onClose={() => setShowThankYou(false)} />
     </PageTransition>
   );
 };

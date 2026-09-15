@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { db, appId } from '@/lib/firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { INITIAL_PROJECTS } from '@/data/mockProjects';
 import { INITIAL_HOBBIES } from '@/data/mockHobbies';
 import { INITIAL_TESTIMONIALS } from '@/data/mockTestimonials';
+import { INITIAL_PROFILE } from '@/data/mockProfile';
 
 // Shared UI
 import { CustomCursor } from '@/components/ui/SharedUI';
@@ -26,6 +27,7 @@ export default function PortfolioApp() {
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
   const [hobbies, setHobbies] = useState(INITIAL_HOBBIES);
   const [testimonials, setTestimonials] = useState(INITIAL_TESTIMONIALS);
+  const [profile, setProfile] = useState(INITIAL_PROFILE);
   const [loading, setLoading] = useState(true);
   
   const [menuOpen, setMenuOpen] = useState(false);
@@ -97,6 +99,17 @@ export default function PortfolioApp() {
     }, (error) => {
       console.error("Error fetching testimonials:", error);
       setTestimonials(INITIAL_TESTIMONIALS);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'profile', 'main'), (snap) => {
+      setProfile(snap.exists() ? { ...INITIAL_PROFILE, ...snap.data() } : INITIAL_PROFILE);
+    }, (error) => {
+      console.error("Error fetching profile:", error);
+      setProfile(INITIAL_PROFILE);
     });
     return () => unsub();
   }, []);
@@ -237,7 +250,7 @@ export default function PortfolioApp() {
 
       <main className="relative z-10 min-h-screen">
         <AnimatePresence mode="wait">
-          {currentView === 'home' && <HomeView key="home" navigate={navigate} />}
+          {currentView === 'home' && <HomeView key="home" navigate={navigate} profile={profile} />}
           {currentView === 'about' && <AboutView key="about" />}
           {currentView === 'projects' && <ProjectsView key="projects" projects={projects} />}
           {currentView === 'hobbies' && <HobbiesView key="hobbies" hobbies={hobbies} />}

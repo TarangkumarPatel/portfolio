@@ -1,20 +1,34 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Lock, Plus, Edit2, Trash2, Save, XCircle, ArrowLeft, LogOut, GripVertical, Check, X as XIcon } from 'lucide-react';
+import Cropper from 'react-easy-crop';
+import { Lock, Plus, Edit2, Trash2, Save, XCircle, ArrowLeft, LogOut, GripVertical, Check, X as XIcon, UploadCloud, FileText, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { PageTransition, MouseGradient, CustomCursor } from '@/components/ui/SharedUI';
 import Footer from '@/components/layout/Footer';
 import { RELATIONSHIP_OPTIONS } from '@/data/mockTestimonials';
+import { getCroppedImageBlob } from '@/lib/cropImage';
 
-const STATUS_RANK = { pending: 0, approved: 1, rejected: 2 };
+const CROP_TARGETS = {
+  desktop: { label: 'Desktop (4:5)', aspect: 4 / 5, previewClass: 'aspect-[4/5] w-[150px]' },
+  mobile: { label: 'Mobile (3:2)', aspect: 3 / 2, previewClass: 'aspect-[3/2] w-[220px]' },
+};
 
 const AdminPage = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginNotice, setLoginNotice] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+
+  const [authView, setAuthView] = useState('login'); // 'login' | 'forgot-request' | 'forgot-reset'
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotNotice, setForgotNotice] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   const [activeTab, setActiveTab] = useState('projects');
   const [projects, setProjects] = useState([]);
@@ -33,6 +47,23 @@ const AdminPage = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(null);
 
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null); // { type: 'avatar' | 'resume' }
+
+  const [avatarSrc, setAvatarSrc] = useState(null);
+  const [cropTarget, setCropTarget] = useState('desktop');
+  const [cropState, setCropState] = useState({
+    desktop: { crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null },
+    mobile: { crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null },
+  });
+  const [previewUrls, setPreviewUrls] = useState({ desktop: null, mobile: null });
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const [avatarNotice, setAvatarNotice] = useState('');
+
+  const [resumeFile, setResumeFile] = useState(null);
+  const [resumeSaving, setResumeSaving] = useState(false);
+  const [resumeError, setResumeError] = useState('');
+  const [resumeNotice, setResumeNotice] = useState('');
 
   const sortedProjects = useMemo(
     () => [...projects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -40,7 +71,7 @@ const AdminPage = () => {
   );
 
   const sortedTestimonials = useMemo(
-    () => [...testimonials].sort((a, b) => (STATUS_RANK[a.status] ?? 1) - (STATUS_RANK[b.status] ?? 1)),
+    () => [...testimonials].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [testimonials]
   );
   const pendingCount = useMemo(() => testimonials.filter(t => t.status === 'pending').length, [testimonials]);
@@ -99,6 +130,68 @@ const AdminPage = () => {
     setLoggingIn(false);
   };
 
+  const handleRequestReset = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError('');
+    setForgotNotice('');
+    try {
+      const res = await fetch('/api/admin/forgot-password', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setAuthView('forgot-reset');
+        setForgotNotice('A reset code has been emailed to the registered admin address.');
+      } else {
+        setForgotError(data.error || 'Failed to send reset code');
+      }
+    } catch (err) {
+      setForgotError('Failed to send reset code');
+    }
+    setForgotLoading(false);
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    if (newPassword !== confirmNewPassword) {
+      setForgotError('Passwords do not match');
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const res = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: resetCode, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setAuthView('login');
+        setResetCode('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setForgotError('');
+        setForgotNotice('');
+        setLoginError('');
+        setLoginNotice('Password updated — log in with your new password.');
+      } else {
+        setForgotError(data.error || 'Failed to reset password');
+      }
+    } catch (err) {
+      setForgotError('Failed to reset password');
+    }
+    setForgotLoading(false);
+  };
+
+  const backToLogin = () => {
+    setAuthView('login');
+    setForgotError('');
+    setForgotNotice('');
+    setResetCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+  };
+
   const handleLogout = async () => {
     try { await fetch('/api/admin/logout', { method: 'POST' }); } catch {}
     setIsAuthenticated(false);
@@ -106,6 +199,121 @@ const AdminPage = () => {
     setMessages([]);
     setHobbies([]);
     setTestimonials([]);
+  };
+
+  const onAvatarFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarSrc(reader.result);
+      setCropTarget('desktop');
+      setCropState({
+        desktop: { crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null },
+        mobile: { crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null },
+      });
+      setPreviewUrls({ desktop: null, mobile: null });
+      setAvatarError('');
+      setAvatarNotice('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const updateCrop = (target, changes) => {
+    setCropState(prev => ({ ...prev, [target]: { ...prev[target], ...changes } }));
+  };
+
+  useEffect(() => {
+    if (!avatarSrc) return;
+    ['desktop', 'mobile'].forEach(async (target) => {
+      const areaPixels = cropState[target].croppedAreaPixels;
+      if (!areaPixels) return;
+      try {
+        const blob = await getCroppedImageBlob(avatarSrc, areaPixels);
+        setPreviewUrls(prev => {
+          if (prev[target]) URL.revokeObjectURL(prev[target]);
+          return { ...prev, [target]: URL.createObjectURL(blob) };
+        });
+      } catch (err) {
+        console.error('Failed to generate preview:', err);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [avatarSrc, cropState.desktop.croppedAreaPixels, cropState.mobile.croppedAreaPixels]);
+
+  const handleSaveAvatarClick = () => {
+    if (!cropState.desktop.croppedAreaPixels || !cropState.mobile.croppedAreaPixels) {
+      setAvatarError('Adjust both the desktop and mobile crops before saving.');
+      return;
+    }
+    setAvatarError('');
+    setConfirmAction({ type: 'avatar' });
+  };
+
+  const handleConfirmAvatarSave = async () => {
+    setAvatarSaving(true);
+    setAvatarError('');
+    try {
+      const [desktopBlob, mobileBlob] = await Promise.all([
+        getCroppedImageBlob(avatarSrc, cropState.desktop.croppedAreaPixels),
+        getCroppedImageBlob(avatarSrc, cropState.mobile.croppedAreaPixels),
+      ]);
+      const formData = new FormData();
+      formData.append('type', 'avatar');
+      formData.append('desktop', desktopBlob, 'avatar-desktop.jpg');
+      formData.append('mobile', mobileBlob, 'avatar-mobile.jpg');
+      const res = await fetch('/api/admin/profile', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Upload failed');
+      }
+      setAvatarNotice('Profile picture updated on the live site.');
+      setAvatarSrc(null);
+      setPreviewUrls({ desktop: null, mobile: null });
+    } catch (err) {
+      setAvatarError(err.message || 'Upload failed');
+    }
+    setAvatarSaving(false);
+    setConfirmAction(null);
+  };
+
+  const onResumeFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setResumeFile(file);
+    setResumeError('');
+    setResumeNotice('');
+  };
+
+  const handleSaveResumeClick = () => {
+    if (!resumeFile) return;
+    setConfirmAction({ type: 'resume' });
+  };
+
+  const handleConfirmResumeSave = async () => {
+    setResumeSaving(true);
+    setResumeError('');
+    try {
+      const formData = new FormData();
+      formData.append('type', 'resume');
+      formData.append('file', resumeFile);
+      const res = await fetch('/api/admin/profile', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Upload failed');
+      }
+      setResumeNotice('Resume updated on the live site.');
+      setResumeFile(null);
+    } catch (err) {
+      setResumeError(err.message || 'Upload failed');
+    }
+    setResumeSaving(false);
+    setConfirmAction(null);
+  };
+
+  const handleConfirmActionConfirm = () => {
+    if (confirmAction?.type === 'avatar') handleConfirmAvatarSave();
+    else if (confirmAction?.type === 'resume') handleConfirmResumeSave();
   };
 
   const handleSaveProject = async (e) => {
@@ -149,6 +357,18 @@ const AdminPage = () => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(p),
+      })
+    )).catch(err => console.error(err));
+  };
+
+  const handleReorderTestimonials = (newOrder) => {
+    const withOrder = newOrder.map((t, i) => ({ ...t, order: i + 1 }));
+    setTestimonials(withOrder);
+    Promise.all(withOrder.map(t =>
+      fetch(`/api/admin/testimonials/${t.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(t),
       })
     )).catch(err => console.error(err));
   };
@@ -258,16 +478,64 @@ const AdminPage = () => {
         <PageTransition className="justify-center relative z-10">
           <div className="bg-zinc-900/80 backdrop-blur-xl p-10 rounded-3xl border border-white/10 max-w-sm w-full text-center">
             <Lock className="w-12 h-12 text-orange-500/50 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-2">Restricted Area</h2>
-            <p className="text-gray-400 text-sm mb-8">Enter password to manage portfolio.</p>
-            <form onSubmit={handleLogin}>
-              <input type="password" placeholder="Enter Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-center text-white text-xl tracking-widest mb-2 focus:outline-none focus:border-orange-500" autoFocus />
-              {loginError && <p className="text-red-500 text-xs mb-4">{loginError}</p>}
-              {!loginError && <div className="mb-6"></div>}
-              <button disabled={loggingIn} className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50">
-                {loggingIn ? 'Authenticating...' : 'Authenticate'}
-              </button>
-            </form>
+
+            {authView === 'login' && (
+              <>
+                <h2 className="text-2xl font-bold text-white mb-2">Restricted Area</h2>
+                <p className="text-gray-400 text-sm mb-8">Enter password to manage portfolio.</p>
+                <form onSubmit={handleLogin}>
+                  <input type="password" placeholder="Enter Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-center text-white text-xl tracking-widest mb-2 focus:outline-none focus:border-orange-500" autoFocus />
+                  {loginError && <p className="text-red-500 text-xs mb-4">{loginError}</p>}
+                  {loginNotice && !loginError && <p className="text-green-500 text-xs mb-4">{loginNotice}</p>}
+                  {!loginError && !loginNotice && <div className="mb-6"></div>}
+                  <button disabled={loggingIn} className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50">
+                    {loggingIn ? 'Authenticating...' : 'Authenticate'}
+                  </button>
+                </form>
+                <button type="button" onClick={() => { backToLogin(); setAuthView('forgot-request'); }} className="mt-5 text-gray-500 hover:text-white text-xs transition-colors">
+                  Forgot password?
+                </button>
+              </>
+            )}
+
+            {authView === 'forgot-request' && (
+              <>
+                <h2 className="text-2xl font-bold text-white mb-2">Reset Password</h2>
+                <p className="text-gray-400 text-sm mb-8">We&apos;ll email a one-time reset code to the registered admin address.</p>
+                <form onSubmit={handleRequestReset}>
+                  {forgotError && <p className="text-red-500 text-xs mb-4">{forgotError}</p>}
+                  <button disabled={forgotLoading} className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50">
+                    {forgotLoading ? 'Sending...' : 'Send Reset Code'}
+                  </button>
+                </form>
+                <button type="button" onClick={backToLogin} className="mt-5 text-gray-500 hover:text-white text-xs transition-colors">
+                  Back to login
+                </button>
+              </>
+            )}
+
+            {authView === 'forgot-reset' && (
+              <>
+                <h2 className="text-2xl font-bold text-white mb-2">Enter Reset Code</h2>
+                <p className="text-gray-400 text-sm mb-6">{forgotNotice || 'Check your email for the 6-digit code.'}</p>
+                <form onSubmit={handleResetPassword} className="space-y-3">
+                  <input type="text" inputMode="numeric" placeholder="6-digit code" value={resetCode} onChange={e => setResetCode(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 text-center text-white text-xl tracking-widest focus:outline-none focus:border-orange-500" autoFocus />
+                  <input type="password" placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-3 text-white focus:outline-none focus:border-orange-500" />
+                  <input type="password" placeholder="Confirm new password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-3 text-white focus:outline-none focus:border-orange-500" />
+                  {forgotError && <p className="text-red-500 text-xs">{forgotError}</p>}
+                  <button disabled={forgotLoading} className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50">
+                    {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </form>
+                <button type="button" onClick={() => setAuthView('forgot-request')} className="mt-5 text-gray-500 hover:text-white text-xs transition-colors">
+                  Resend code
+                </button>
+                <span className="mx-2 text-gray-700 text-xs">·</span>
+                <button type="button" onClick={backToLogin} className="mt-5 text-gray-500 hover:text-white text-xs transition-colors">
+                  Back to login
+                </button>
+              </>
+            )}
           </div>
         </PageTransition>
         <Footer />
@@ -297,6 +565,7 @@ const AdminPage = () => {
                 )}
               </button>
               <button onClick={() => setActiveTab('messages')} className={`shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'messages' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>Messages</button>
+              <button onClick={() => setActiveTab('profile')} className={`shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>Profile</button>
             </div>
             <button onClick={handleLogout} className="shrink-0 flex items-center gap-2 text-gray-400 hover:text-white text-xs md:text-sm px-2 md:px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
               <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Logout</span>
@@ -398,7 +667,7 @@ const AdminPage = () => {
           <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 w-full mb-20">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-2xl font-bold text-white">Testimonials</h3>
-              <button onClick={() => { setCurrentTestimonial({ name: '', title: '', organization: '', relationship: RELATIONSHIP_OPTIONS[0], message: '', linkedinUrl: '', avatarUrl: '', status: 'approved' }); setIsEditingTestimonial(true); }} className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-medium">
+              <button onClick={() => { setCurrentTestimonial({ name: '', title: '', organization: '', relationship: RELATIONSHIP_OPTIONS[0], message: '', linkedinUrl: '', avatarUrl: '', status: 'approved', order: testimonials.length + 1 }); setIsEditingTestimonial(true); }} className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-medium">
                 <Plus className="w-4 h-4" /> New Testimonial
               </button>
             </div>
@@ -435,10 +704,12 @@ const AdminPage = () => {
               </motion.form>
             )}
 
-            <div className="space-y-4">
+            <p className="text-gray-500 text-xs mb-4">Drag the handle to reorder — this order is reflected on the Testimonials page.</p>
+            <Reorder.Group axis="y" values={sortedTestimonials} onReorder={handleReorderTestimonials} className="space-y-4">
               {sortedTestimonials.map(t => (
-                <div key={t.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-black/40 border border-white/5 p-4 rounded-xl hover:border-white/20 transition-colors">
+                <Reorder.Item key={t.id} value={t} className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-black/40 border border-white/5 p-4 rounded-xl hover:border-white/20 transition-colors">
                   <div className="flex items-start gap-4 min-w-0">
+                    <GripVertical className="w-4 h-4 text-gray-600 cursor-grab active:cursor-grabbing shrink-0 mt-1" />
                     <span className={`shrink-0 mt-1 text-[10px] font-mono uppercase px-2 py-1 rounded-full ${t.status === 'approved' ? 'bg-green-500/10 text-green-400' : t.status === 'rejected' ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
                       {t.status || 'pending'}
                     </span>
@@ -458,10 +729,10 @@ const AdminPage = () => {
                     <button onClick={() => { setCurrentTestimonial(t); setIsEditingTestimonial(true); }} className="p-2 bg-white/5 text-gray-300 hover:text-white rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
                     <button onClick={() => requestDelete('testimonial', t.id, `testimonial from ${t.name}`)} className="p-2 bg-red-500/10 text-red-400 hover:text-red-300 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
-                </div>
+                </Reorder.Item>
               ))}
-              {!loadingData && testimonials.length === 0 && <p className="text-gray-500">No testimonials found. Share the hidden submission link with a professor or manager to collect one.</p>}
-            </div>
+            </Reorder.Group>
+            {!loadingData && testimonials.length === 0 && <p className="text-gray-500">No testimonials found. Share the hidden submission link with a professor or manager to collect one.</p>}
           </div>
         )}
 
@@ -482,6 +753,102 @@ const AdminPage = () => {
                 </div>
               ))}
               {!loadingData && messages.length === 0 && <p className="text-gray-500">No messages yet.</p>}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 w-full mb-20 space-y-12">
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><ImageIcon className="w-5 h-5 text-orange-400" /> Profile Picture</h3>
+              <p className="text-gray-500 text-sm mb-6">Upload a photo, crop it for both the desktop and mobile home page cards, then confirm to publish.</p>
+
+              <label className="flex items-center gap-3 w-fit bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-3 rounded-lg cursor-pointer text-sm font-medium transition-colors mb-6">
+                <UploadCloud className="w-4 h-4" /> Choose Image
+                <input type="file" accept="image/*" onChange={onAvatarFileChange} className="hidden" />
+              </label>
+
+              {avatarSrc && (
+                <div className="space-y-6">
+                  <div className="flex gap-2">
+                    {Object.entries(CROP_TARGETS).map(([key, cfg]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setCropTarget(key)}
+                        className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${cropTarget === key ? 'bg-white text-black' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                      >
+                        {cfg.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="relative w-full h-80 bg-black rounded-xl overflow-hidden">
+                    <Cropper
+                      image={avatarSrc}
+                      crop={cropState[cropTarget].crop}
+                      zoom={cropState[cropTarget].zoom}
+                      aspect={CROP_TARGETS[cropTarget].aspect}
+                      onCropChange={(crop) => updateCrop(cropTarget, { crop })}
+                      onZoomChange={(zoom) => updateCrop(cropTarget, { zoom })}
+                      onCropComplete={(_, croppedAreaPixels) => updateCrop(cropTarget, { croppedAreaPixels })}
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={3}
+                    step={0.01}
+                    value={cropState[cropTarget].zoom}
+                    onChange={(e) => updateCrop(cropTarget, { zoom: Number(e.target.value) })}
+                    className="w-full"
+                  />
+
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase font-mono mb-3">Live preview — exactly how it will look on the home page</p>
+                    <div className="flex gap-8 items-end">
+                      {Object.entries(CROP_TARGETS).map(([key, cfg]) => (
+                        <div key={key} className="text-center">
+                          <div className={`${cfg.previewClass} rounded-[2rem] overflow-hidden border border-white/10 bg-black mb-2`}>
+                            {previewUrls[key] ? (
+                              <img src={previewUrls[key]} alt={`${cfg.label} preview`} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">Adjust crop</div>
+                            )}
+                          </div>
+                          <span className="text-gray-500 text-xs">{cfg.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {avatarError && <p className="text-red-500 text-xs">{avatarError}</p>}
+                  <button onClick={handleSaveAvatarClick} disabled={avatarSaving} className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors text-sm font-medium disabled:opacity-50">
+                    <Save className="w-4 h-4" /> Save Profile Picture
+                  </button>
+                </div>
+              )}
+              {avatarNotice && !avatarSrc && <p className="text-green-500 text-sm">{avatarNotice}</p>}
+            </div>
+
+            <div className="border-t border-white/10 pt-10">
+              <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><FileText className="w-5 h-5 text-orange-400" /> Resume</h3>
+              <p className="text-gray-500 text-sm mb-6">Upload a PDF to replace the resume linked from the home page.</p>
+
+              <label className="flex items-center gap-3 w-fit bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-3 rounded-lg cursor-pointer text-sm font-medium transition-colors mb-4">
+                <UploadCloud className="w-4 h-4" /> Choose PDF
+                <input type="file" accept="application/pdf" onChange={onResumeFileChange} className="hidden" />
+              </label>
+
+              {resumeFile && <p className="text-gray-400 text-sm mb-4">Selected: {resumeFile.name}</p>}
+              {resumeError && <p className="text-red-500 text-xs mb-4">{resumeError}</p>}
+              {resumeNotice && !resumeFile && <p className="text-green-500 text-sm mb-4">{resumeNotice}</p>}
+
+              {resumeFile && (
+                <button onClick={handleSaveResumeClick} disabled={resumeSaving} className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors text-sm font-medium disabled:opacity-50">
+                  <Save className="w-4 h-4" /> Update Resume
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -507,6 +874,35 @@ const AdminPage = () => {
               <div className="flex gap-3">
                 <button onClick={() => setConfirmDelete(null)} className="flex-1 py-3 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors font-medium">No, keep it</button>
                 <button onClick={handleConfirmDelete} className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-medium transition-colors">Yes, delete</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {confirmAction && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-6"
+            onClick={() => !avatarSaving && !resumeSaving && setConfirmAction(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-zinc-900 border border-white/10 rounded-2xl p-8 max-w-sm w-full text-center"
+            >
+              {confirmAction.type === 'avatar' ? <ImageIcon className="w-10 h-10 text-orange-400 mx-auto mb-5" /> : <FileText className="w-10 h-10 text-orange-400 mx-auto mb-5" />}
+              <h4 className="text-white text-lg font-bold mb-2">
+                {confirmAction.type === 'avatar' ? 'Update your profile picture?' : 'Replace your resume?'}
+              </h4>
+              <p className="text-gray-400 text-sm mb-8">This will go live on the site immediately.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmAction(null)} disabled={avatarSaving || resumeSaving} className="flex-1 py-3 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors font-medium disabled:opacity-50">Cancel</button>
+                <button onClick={handleConfirmActionConfirm} disabled={avatarSaving || resumeSaving} className="flex-1 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-medium transition-colors disabled:opacity-50">
+                  {avatarSaving || resumeSaving ? 'Saving...' : 'Yes, confirm'}
+                </button>
               </div>
             </motion.div>
           </motion.div>

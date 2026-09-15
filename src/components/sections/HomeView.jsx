@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Mail, ArrowRight, FileText } from 'lucide-react';
 import { PageTransition, CyclingText, CinematicTextReveal, SocialPill, MagneticElement, MouseGradient } from '@/components/ui/SharedUI';
+import { INITIAL_PROFILE } from '@/data/mockProfile';
 
 // Custom SVG Icons to replace the missing Lucide brand icons
 const GithubIcon = ({ className }) => (
@@ -20,7 +21,7 @@ const LinkedinIcon = ({ className }) => (
   </svg>
 );
 
-const HomeView = ({ navigate }) => {
+const HomeView = ({ navigate, profile = INITIAL_PROFILE }) => {
   return (
     <PageTransition className="justify-center relative overflow-hidden">
       <MouseGradient />
@@ -54,9 +55,14 @@ const HomeView = ({ navigate }) => {
         >
           <div className="relative aspect-[3/2] w-full md:absolute md:inset-0 md:aspect-auto">
             <img
-              src="/Profile.jpg"
+              src={profile.avatarMobileUrl}
               alt="Tarangkumar Patel"
-              className="w-full h-full object-cover object-top md:object-center scale-105 group-hover:scale-100 transition-transform duration-1000 ease-[0.16,1,0.3,1]"
+              className="md:hidden w-full h-full object-cover object-top scale-105 group-hover:scale-100 transition-transform duration-1000 ease-[0.16,1,0.3,1]"
+            />
+            <img
+              src={profile.avatarDesktopUrl}
+              alt="Tarangkumar Patel"
+              className="hidden md:block w-full h-full object-cover object-center scale-105 group-hover:scale-100 transition-transform duration-1000 ease-[0.16,1,0.3,1]"
             />
           </div>
           <div className="relative md:absolute md:inset-0 bg-black/80 md:bg-transparent backdrop-blur-md md:backdrop-blur-none md:bg-gradient-to-t md:from-black/90 md:via-black/40 md:to-transparent px-6 pb-5 pt-2 md:p-8 flex flex-col justify-end">
@@ -66,7 +72,7 @@ const HomeView = ({ navigate }) => {
               <SocialPill icon={GithubIcon} label="GitHub" href="https://github.com/TarangkumarPatel" />
               <SocialPill icon={LinkedinIcon} label="LinkedIn" href="https://www.linkedin.com/in/tarangkumarpatel/" />
               <SocialPill icon={Mail} label="Email" href="mailto:tarangkumar.dev@gmail.com" copyValue="tarangkumar.dev@gmail.com" />
-              <SocialPill icon={FileText} label="Resume" href="/Tarangkumar_Patel_Resume.pdf" />
+              <SocialPill icon={FileText} label="Resume" href={profile.resumeUrl} />
             </div>
           </div>
         </motion.div>
