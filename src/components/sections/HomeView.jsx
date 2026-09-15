@@ -66,7 +66,7 @@ const HomeView = ({ navigate }) => {
               <SocialPill icon={GithubIcon} label="GitHub" href="https://github.com/TarangkumarPatel" />
               <SocialPill icon={LinkedinIcon} label="LinkedIn" href="https://www.linkedin.com/in/tarangkumarpatel/" />
               <SocialPill icon={Mail} label="Email" href="mailto:tarangkumar.dev@gmail.com" copyValue="tarangkumar.dev@gmail.com" />
-              <SocialPill icon={FileText} label="Resume" href="/Resume_Tarangkumar_Janakkumar_Patel.pdf" />
+              <SocialPill icon={FileText} label="Resume" href="/Tarangkumar_Patel_Resume.pdf" />
             </div>
           </div>
         </motion.div>
