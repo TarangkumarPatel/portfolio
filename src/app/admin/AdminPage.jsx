@@ -8,11 +8,15 @@ import { PageTransition, MouseGradient, CustomCursor } from '@/components/ui/Sha
 import Footer from '@/components/layout/Footer';
 import { RELATIONSHIP_OPTIONS } from '@/data/mockTestimonials';
 import { getCroppedImageBlob } from '@/lib/cropImage';
+import { BLOG_CATEGORIES } from '@/lib/blogFields';
+import { renderMarkdown } from '@/lib/renderMarkdown';
 
 const CROP_TARGETS = {
   desktop: { label: 'Desktop (4:5)', aspect: 4 / 5, previewClass: 'aspect-[4/5] w-[150px]' },
   mobile: { label: 'Mobile (3:2)', aspect: 3 / 2, previewClass: 'aspect-[3/2] w-[220px]' },
 };
+
+const MAX_RESUME_BYTES = 4 * 1024 * 1024;
 
 const AdminPage = () => {
   const [checkingSession, setCheckingSession] = useState(true);
@@ -35,6 +39,7 @@ const AdminPage = () => {
   const [messages, setMessages] = useState([]);
   const [hobbies, setHobbies] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
+  const [blogs, setBlogs] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -45,6 +50,11 @@ const AdminPage = () => {
 
   const [isEditingTestimonial, setIsEditingTestimonial] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(null);
+
+  const [isEditingBlog, setIsEditingBlog] = useState(false);
+  const [currentBlog, setCurrentBlog] = useState(null);
+  const [blogPreview, setBlogPreview] = useState(false);
+  const [blogError, setBlogError] = useState('');
 
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'avatar' | 'resume' }
@@ -74,6 +84,11 @@ const AdminPage = () => {
     () => [...testimonials].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     [testimonials]
   );
+  const sortedBlogs = useMemo(
+    () => [...blogs].sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || ''))),
+    [blogs]
+  );
+
   const pendingCount = useMemo(() => testimonials.filter(t => t.status === 'pending').length, [testimonials]);
 
   useEffect(() => {
@@ -87,16 +102,18 @@ const AdminPage = () => {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [projRes, msgRes, hobRes, testRes] = await Promise.all([
+      const [projRes, msgRes, hobRes, testRes, blogRes] = await Promise.all([
         fetch('/api/admin/projects'),
         fetch('/api/admin/messages'),
         fetch('/api/admin/hobbies'),
         fetch('/api/admin/testimonials'),
+        fetch('/api/admin/blogs'),
       ]);
       if (projRes.ok) setProjects((await projRes.json()).projects);
       if (msgRes.ok) setMessages((await msgRes.json()).messages);
       if (hobRes.ok) setHobbies((await hobRes.json()).hobbies);
       if (testRes.ok) setTestimonials((await testRes.json()).testimonials);
+      if (blogRes.ok) setBlogs((await blogRes.json()).blogs);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     }
@@ -199,6 +216,7 @@ const AdminPage = () => {
     setMessages([]);
     setHobbies([]);
     setTestimonials([]);
+    setBlogs([]);
   };
 
   const onAvatarFileChange = (e) => {
@@ -265,7 +283,7 @@ const AdminPage = () => {
       const res = await fetch('/api/admin/profile', { method: 'POST', body: formData });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Upload failed');
+        throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
       }
       setAvatarNotice('Profile picture updated on the live site.');
       setAvatarSrc(null);
@@ -279,7 +297,18 @@ const AdminPage = () => {
 
   const onResumeFileChange = (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
+    if (file.type !== 'application/pdf') {
+      setResumeFile(null);
+      setResumeError('Please choose a PDF file.');
+      return;
+    }
+    if (file.size > MAX_RESUME_BYTES) {
+      setResumeFile(null);
+      setResumeError(`That PDF is ${(file.size / 1024 / 1024).toFixed(1)}MB — please keep it under 4MB.`);
+      return;
+    }
     setResumeFile(file);
     setResumeError('');
     setResumeNotice('');
@@ -300,7 +329,7 @@ const AdminPage = () => {
       const res = await fetch('/api/admin/profile', { method: 'POST', body: formData });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Upload failed');
+        throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
       }
       setResumeNotice('Resume updated on the live site.');
       setResumeFile(null);
@@ -451,6 +480,46 @@ const AdminPage = () => {
     }
   };
 
+  const startNewBlog = () => {
+    setCurrentBlog({ title: '', summary: '', content: '', category: BLOG_CATEGORIES[0], tags: '', coverImageUrl: '', externalUrl: '', publishedAt: new Date().toISOString().slice(0, 10), status: 'draft' });
+    setBlogPreview(false);
+    setBlogError('');
+    setIsEditingBlog(true);
+  };
+
+  const handleSaveBlog = async (e) => {
+    e.preventDefault();
+    setBlogError('');
+    try {
+      const isEdit = Boolean(currentBlog.id);
+      const res = await fetch(isEdit ? `/api/admin/blogs/${currentBlog.id}` : '/api/admin/blogs', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentBlog),
+      });
+      if (res.ok) {
+        setIsEditingBlog(false);
+        setCurrentBlog(null);
+        loadData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setBlogError(data.error || `Save failed (HTTP ${res.status})`);
+      }
+    } catch (err) {
+      console.error(err);
+      setBlogError('Save failed');
+    }
+  };
+
+  const handleDeleteBlog = async (id) => {
+    try {
+      const res = await fetch(`/api/admin/blogs/${id}`, { method: 'DELETE' });
+      if (res.ok) loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const requestDelete = (type, id, label) => setConfirmDelete({ type, id, label });
 
   const handleConfirmDelete = async () => {
@@ -460,6 +529,7 @@ const AdminPage = () => {
     else if (type === 'message') await handleDeleteMessage(id);
     else if (type === 'hobby') await handleDeleteHobby(id);
     else if (type === 'testimonial') await handleDeleteTestimonial(id);
+    else if (type === 'blog') await handleDeleteBlog(id);
     setConfirmDelete(null);
   };
 
@@ -557,6 +627,7 @@ const AdminPage = () => {
           <div className="flex items-center gap-3 md:gap-4">
             <div className="flex gap-1 md:gap-2 p-1 bg-white/5 border border-white/10 rounded-xl overflow-x-auto no-scrollbar">
               <button onClick={() => setActiveTab('projects')} className={`shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'projects' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>Projects</button>
+              <button onClick={() => setActiveTab('writings')} className={`shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'writings' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>Writings</button>
               <button onClick={() => setActiveTab('hobbies')} className={`shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'hobbies' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>Hobbies</button>
               <button onClick={() => setActiveTab('testimonials')} className={`relative shrink-0 px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${activeTab === 'testimonials' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'}`}>
                 Testimonials
@@ -617,6 +688,82 @@ const AdminPage = () => {
               ))}
             </Reorder.Group>
             {!loadingData && projects.length === 0 && <p className="text-gray-500">No projects found.</p>}
+          </div>
+        )}
+
+        {activeTab === 'writings' && (
+          <div className="bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 w-full mb-20">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-bold text-white">Writings</h3>
+              <button onClick={startNewBlog} className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-medium">
+                <Plus className="w-4 h-4" /> New Post
+              </button>
+            </div>
+
+            {isEditingBlog && (
+              <motion.form initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} onSubmit={handleSaveBlog} className="bg-black/50 p-6 rounded-2xl border border-white/5 space-y-6 mb-8">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-white font-bold">{currentBlog?.id ? 'Edit Post' : 'New Post'}</h4>
+                  <button type="button" onClick={() => setIsEditingBlog(false)} className="text-gray-400 hover:text-white"><XCircle /></button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2"><label className="block text-xs uppercase text-gray-500 mb-1">Title</label><input required type="text" value={currentBlog?.title} onChange={e => setCurrentBlog({ ...currentBlog, title: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div className="md:col-span-2"><label className="block text-xs uppercase text-gray-500 mb-1">Summary (shown on the list)</label><textarea rows={2} value={currentBlog?.summary} onChange={e => setCurrentBlog({ ...currentBlog, summary: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div>
+                    <label className="block text-xs uppercase text-gray-500 mb-1">Category</label>
+                    <select value={currentBlog?.category} onChange={e => setCurrentBlog({ ...currentBlog, category: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500">
+                      {BLOG_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">Publish Date</label><input required type="date" value={currentBlog?.publishedAt} onChange={e => setCurrentBlog({ ...currentBlog, publishedAt: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">Tags (comma separated)</label><input type="text" value={Array.isArray(currentBlog?.tags) ? currentBlog.tags.join(', ') : currentBlog?.tags} onChange={e => setCurrentBlog({ ...currentBlog, tags: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div>
+                    <label className="block text-xs uppercase text-gray-500 mb-1">Status</label>
+                    <select value={currentBlog?.status} onChange={e => setCurrentBlog({ ...currentBlog, status: e.target.value })} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500">
+                      <option value="draft">Draft (hidden)</option>
+                      <option value="published">Published</option>
+                    </select>
+                  </div>
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">Cover Image URL (optional)</label><input type="url" value={currentBlog?.coverImageUrl || ''} onChange={e => setCurrentBlog({ ...currentBlog, coverImageUrl: e.target.value })} placeholder="https://..." className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div><label className="block text-xs uppercase text-gray-500 mb-1">External Link (optional: Medium, arXiv, PDF...)</label><input type="url" value={currentBlog?.externalUrl || ''} onChange={e => setCurrentBlog({ ...currentBlog, externalUrl: e.target.value })} placeholder="https://..." className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500" /></div>
+                  <div className="md:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                      <label className="block text-xs uppercase text-gray-500">Content (Markdown) &mdash; leave empty to link straight to the external URL</label>
+                      <div className="flex gap-1 p-0.5 bg-white/5 rounded-lg">
+                        <button type="button" onClick={() => setBlogPreview(false)} className={`px-3 py-1 rounded-md text-xs ${!blogPreview ? 'bg-white text-black' : 'text-gray-400'}`}>Write</button>
+                        <button type="button" onClick={() => setBlogPreview(true)} className={`px-3 py-1 rounded-md text-xs ${blogPreview ? 'bg-white text-black' : 'text-gray-400'}`}>Preview</button>
+                      </div>
+                    </div>
+                    {blogPreview ? (
+                      <div className="min-h-[320px] bg-zinc-900 border border-white/10 rounded-lg px-6 py-2">{currentBlog?.content?.trim() ? renderMarkdown(currentBlog.content) : <p className="text-gray-600 py-4">Nothing to preview yet.</p>}</div>
+                    ) : (
+                      <textarea rows={16} value={currentBlog?.content} onChange={e => setCurrentBlog({ ...currentBlog, content: e.target.value })} placeholder={'## Introduction\n\nWrite with **Markdown**: headings, lists, `code`, [links](https://...), ![images](https://...) and ``` code blocks.'} className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500 font-mono text-sm leading-relaxed" />
+                    )}
+                  </div>
+                </div>
+                {blogError && <p className="text-red-500 text-xs">{blogError}</p>}
+                <button type="submit" className="bg-white text-black font-bold py-3 px-8 rounded-lg flex items-center gap-2 hover:bg-gray-200"><Save className="w-5 h-5" /> Save Post</button>
+              </motion.form>
+            )}
+
+            <div className="space-y-4">
+              {sortedBlogs.map(b => (
+                <div key={b.id} className="flex items-center justify-between gap-4 bg-black/40 border border-white/5 p-4 rounded-xl hover:border-white/20 transition-colors">
+                  <div className="flex items-start gap-4 min-w-0">
+                    <span className={`shrink-0 mt-1 text-[10px] font-mono uppercase px-2 py-1 rounded-full ${b.status === 'draft' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-green-500/10 text-green-400'}`}>{b.status === 'draft' ? 'draft' : 'live'}</span>
+                    <div className="min-w-0">
+                      <h4 className="text-white font-medium truncate">{b.title}</h4>
+                      <p className="text-gray-500 text-xs font-mono">{b.category} · {b.publishedAt}{b.externalUrl ? ' · external link' : ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => { setCurrentBlog(b); setBlogPreview(false); setBlogError(''); setIsEditingBlog(true); }} className="p-2 bg-white/5 text-gray-300 hover:text-white rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button onClick={() => requestDelete('blog', b.id, b.title)} className="p-2 bg-red-500/10 text-red-400 hover:text-red-300 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              ))}
+              {!loadingData && blogs.length === 0 && <p className="text-gray-500">No posts yet. Drafts stay hidden until you set them to Published.</p>}
+            </div>
           </div>
         )}
 

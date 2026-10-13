@@ -1,9 +1,7 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
 
 let _adminDb = null;
-let _adminBucket = null;
 
 function getAdminApp() {
   const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
@@ -25,16 +23,4 @@ export function getAdminDb() {
   if (_adminDb) return _adminDb;
   _adminDb = getFirestore(getAdminApp());
   return _adminDb;
-}
-
-export function getAdminBucket() {
-  if (_adminBucket) return _adminBucket;
-
-  const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-  if (!bucketName) {
-    throw new Error('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not configured.');
-  }
-
-  _adminBucket = getStorage(getAdminApp()).bucket(bucketName);
-  return _adminBucket;
 }

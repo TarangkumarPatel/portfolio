@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getAdminDb, getAdminBucket } from '@/lib/firebaseAdmin';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/adminAuth';
+import { saveFile } from '@/lib/fileStore';
 
 const PROFILE_DOC_PATH = 'artifacts/portfolio-app/public/data/profile/main';
 
-async function uploadFile(bucket, path, blob, contentType) {
+// Vercel rejects request bodies over 4.5MB before they reach this route.
+const MAX_RESUME_BYTES = 4 * 1024 * 1024;
+
+async function uploadFile(name, blob, contentType) {
   const buffer = Buffer.from(await blob.arrayBuffer());
-  const file = bucket.file(path);
-  await file.save(buffer, { contentType, public: true, metadata: { cacheControl: 'public, max-age=31536000' } });
-  return `https://storage.googleapis.com/${bucket.name}/${path}?v=${Date.now()}`;
+  const version = await saveFile(name, buffer, contentType);
+  return `/api/files/${name}?v=${version}`;
 }
 
 export async function POST(request) {
@@ -17,7 +20,6 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const type = formData.get('type');
-    const bucket = getAdminBucket();
     const docRef = getAdminDb().doc(PROFILE_DOC_PATH);
     const update = { updatedAt: new Date().toISOString() };
 
@@ -27,14 +29,20 @@ export async function POST(request) {
       if (!desktop || !mobile) {
         return NextResponse.json({ error: 'Both desktop and mobile crops are required' }, { status: 400 });
       }
-      update.avatarDesktopUrl = await uploadFile(bucket, 'profile/avatar-desktop.jpg', desktop, 'image/jpeg');
-      update.avatarMobileUrl = await uploadFile(bucket, 'profile/avatar-mobile.jpg', mobile, 'image/jpeg');
+      update.avatarDesktopUrl = await uploadFile('avatar-desktop.jpg', desktop, 'image/jpeg');
+      update.avatarMobileUrl = await uploadFile('avatar-mobile.jpg', mobile, 'image/jpeg');
     } else if (type === 'resume') {
       const file = formData.get('file');
-      if (!file) {
+      if (!file || typeof file === 'string') {
         return NextResponse.json({ error: 'A PDF file is required' }, { status: 400 });
       }
-      update.resumeUrl = await uploadFile(bucket, 'profile/resume.pdf', file, 'application/pdf');
+      if (file.type && file.type !== 'application/pdf') {
+        return NextResponse.json({ error: 'Resume must be a PDF file' }, { status: 400 });
+      }
+      if (file.size > MAX_RESUME_BYTES) {
+        return NextResponse.json({ error: 'Resume must be under 4MB' }, { status: 400 });
+      }
+      update.resumeUrl = await uploadFile('resume.pdf', file, 'application/pdf');
     } else {
       return NextResponse.json({ error: 'Invalid upload type' }, { status: 400 });
     }
@@ -43,6 +51,6 @@ export async function POST(request) {
     return NextResponse.json({ success: true, profile: update });
   } catch (err) {
     console.error('Profile upload error:', err);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return NextResponse.json({ error: `Upload failed: ${err?.message || 'unknown error'}` }, { status: 500 });
   }
 }

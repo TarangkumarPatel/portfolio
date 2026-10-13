@@ -20,6 +20,7 @@ import AboutView from '@/components/sections/AboutView';
 import ProjectsView from '@/components/sections/ProjectsView';
 import HobbiesView from '@/components/sections/HobbiesView';
 import TestimonialsView from '@/components/sections/TestimonialsView';
+import WritingsView from '@/components/sections/WritingsView';
 import ContactView from '@/components/sections/ContactView';
 
 export default function PortfolioApp() {
@@ -28,6 +29,7 @@ export default function PortfolioApp() {
   const [hobbies, setHobbies] = useState(INITIAL_HOBBIES);
   const [testimonials, setTestimonials] = useState(INITIAL_TESTIMONIALS);
   const [profile, setProfile] = useState(INITIAL_PROFILE);
+  const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [menuOpen, setMenuOpen] = useState(false);
@@ -105,6 +107,17 @@ export default function PortfolioApp() {
 
   useEffect(() => {
     if (!db) return;
+    const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'blogs'), (snapshot) => {
+      setBlogs(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+    }, (error) => {
+      console.error("Error fetching blogs:", error);
+      setBlogs([]);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!db) return;
     const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'profile', 'main'), (snap) => {
       setProfile(snap.exists() ? { ...INITIAL_PROFILE, ...snap.data() } : INITIAL_PROFILE);
     }, (error) => {
@@ -140,6 +153,7 @@ export default function PortfolioApp() {
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About Me' },
     { id: 'projects', label: 'Work' },
+    { id: 'writings', label: 'Writings' },
     { id: 'hobbies', label: 'Life' },
     { id: 'testimonials', label: 'Testimonials' },
     { id: 'contact', label: 'Contact' }
@@ -253,6 +267,7 @@ export default function PortfolioApp() {
           {currentView === 'home' && <HomeView key="home" navigate={navigate} profile={profile} />}
           {currentView === 'about' && <AboutView key="about" />}
           {currentView === 'projects' && <ProjectsView key="projects" projects={projects} />}
+          {currentView === 'writings' && <WritingsView key="writings" blogs={blogs} />}
           {currentView === 'hobbies' && <HobbiesView key="hobbies" hobbies={hobbies} />}
           {currentView === 'testimonials' && <TestimonialsView key="testimonials" testimonials={testimonials} />}
           {currentView === 'contact' && <ContactView key="contact" />}
