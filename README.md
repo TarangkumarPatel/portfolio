@@ -1,4 +1,4 @@
-# Tarangkumar Patel — Portfolio
+# Tarangkumar Janakkumar Patel — Portfolio
 
 My personal portfolio, built with Next.js. A single-page experience covering Home, About, Work, Life, and Contact, with a Firebase-backed admin panel for managing projects and incoming messages.
 
